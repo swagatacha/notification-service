@@ -1,0 +1,10 @@
+.env
+venv/
+nbproject/
+.*/
+**/__*__/**
+__pycache__/
+**/__pycache__/**
+.idea/**
+.env
+*.pyc
