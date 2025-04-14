@@ -9,6 +9,7 @@ queues = [
     "order_shipped",
     "order_delivered",
     "order_edit",
+    "order_cancel",
     "user_registration"
 ]
 

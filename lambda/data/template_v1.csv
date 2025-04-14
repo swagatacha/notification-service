@@ -1,0 +1,53 @@
+Event,PaymentType,ActionBy,TemplateId,Header,SMSContent,CreatedBy,PushContent,EmailContent
+order_placed,,C,1.71E+18,SSTSND,"Your order {#var#} with amount Rs {#var#} has been placed successfully! Track your order here: {#var#}.
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_confirmed,,,1.71E+18,SSTSND,"Dear {#var#},
+Your order {#var#} has been confirmed! Track your order here: {#var#}
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_hold,,,1.71E+18,SSTSND,"Dear {#var#},
+Your order {#var#} is currently on hold due to {#var#}. We will notify you once it is confirmed. Track your order here: {#var#}
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_delivered,,,1.71E+18,SSTSND,"Dear {#var#},
+Your order {#var#} has been delivered! For any assistance, feel free to call {#var#}.
+SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,,
+order_cancel,Online,C,1.71E+18,SSTSND,"Dear {#var#},
+your order {#var#} has been cancelled. A refund of Rs {#var#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
+SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,,
+order_cancel,COD,C,1.71E+18,SSTSND,"Dear {#var#},
+your order {#var#} has been cancelled.
+
+SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,,
+order_cancel,Online,HB,1.71E+18,SSTSND,"Your order {#var#} has been cancelled due to prescription mismatch. A refund of Rs {#var#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
+
+Please upload a new prescription and order again.
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_cancel,COD,HB,1.71E+18,SSTSND,"Your order {#var#} has been cancelled due to prescription mismatch. Please upload a new prescription and order again.
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_cancel,Online,Admin,1.71E+18,SSTSND,"Your order {#var#} has been cancelled due to some unavoidable circumstances. A refund of Rs.{#var#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_cancel,COD,Admin,1.71E+18,SSTSND,"Dear {#var#},
+
+Your order {#var#} has been cancelled due to some unavoidable circumstances.
+
+Team SastaSundar",sdasgupta1@genupathlabs.com,,
+order_edit,Online,,1.71E+18,SSTSND,"Your order {#var#} from SastaSundar has been modified due to unavailablity of {#var#}. A refund of Rs.{#var#} has been initiated to your source account.
+
+View updated order: {#var#}",sdasgupta1@genupathlabs.com,,
+order_edit,COD,,1.71E+18,SSTSND,"Your order {#var#} from SastaSundar has been modified due to unavailablity of {#var#}. Your billed amount has been adjusted accordingly.
+
+View updated order: {#var#}",sdasgupta1@genupathlabs.com,,
+order_edit,Wallet,,1.71E+18,SSTSND,"Your order {#var#} from SastaSundar has been modified due to unavailablity of {#var#}. A refund of Rs.{#var#} has been initiated to your wallet.
+
+View updated order: {#var#}",sdasgupta1@genupathlabs.com,,
+order_edit,Partial(wallet +online),,1.71E+18,SSTSND,"Your order {#var#} from SastaSundar has been modified due to unavailablity of {#var#}. A refund of Rs.{#var#} has been initiated to your source account and rest to your SS wallet.
+
+View updated order: {#var#}",sdasgupta1@genupathlabs.com,,
+order_shipped,,,1.71E+18,SSTSND,"Dear {#var#},
+
+Your orders containing {#var#} items have been shipped. Track your orders in the SastaSundar app.",sdasgupta1@genupathlabs.com,,
