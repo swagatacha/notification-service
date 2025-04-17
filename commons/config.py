@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Read RabbitMQ configuration from environment variables
+RABBITMQ_CONNECTION_POOL = os.getenv("RABBITMQ_CONNECTION_POOL", "false").lower() == "true"
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT"))
 RABBITMQ_MANAGEMENT_PORT = int(os.getenv("RABBITMQ_MANAGEMENT_PORT")) 
@@ -33,5 +34,11 @@ mongodb = {
     'username': os.getenv('MONGO_USER'),
     'password': os.getenv('MONGO_PASWD'),
     'dbname': os.getenv('MONGO_DBNAME'),
-    'auth_mechanism': os.getenv('MONGO_AUTH_MECHANISM')
+    'auth_mechanism': os.getenv('MONGO_AUTH_MECHANISM'),
+    'auth_source': os.getenv('MONGO_USER')
+}
+# Read Redis Details
+redis = {
+    'host': os.getenv('REDIS_HOST'),
+    'port': int(os.getenv('REDIS_PORT'))
 }

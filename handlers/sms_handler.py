@@ -1,19 +1,21 @@
 import http.client
 import json
-import logging
 import urllib
-from commons import config, restclient
+from commons import config, restclient, NotificationLogger
+from commons.utils import retry
 
-logger = logging.getLogger(__name__)
+log_clt = NotificationLogger()
+logger = log_clt.get_logger(__name__)
 
 class Sms:
     def __init__(self, sms_header=None):
         self.sms_header = sms_header or config.SMS_DEFAULT_HEADER
 
-    def send_sms_infobip(self, msg, to, principaltempId , tempId=""):
+    @retry(max_retries=3, delay=1, backoff=2)
+    def send_sms_infobip(self, msg, to, principaltempId="" , tempId=""):
         try:
-            apiUrl = config.INFOBIP_API_URL
-            conn = http.client.HTTPSConnection(apiUrl)
+            # apiUrl = config.INFOBIP_API_URL
+            # conn = http.client.HTTPSConnection(apiUrl)
             jsonData = {
                 "messages": [
                     {
@@ -34,26 +36,28 @@ class Sms:
                 ]
             }
 
-            payload = json.dumps(jsonData)
-            headers = {
-                'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-            conn.request("POST", "/sms/2/text/advanced", payload, headers)
-            res = conn.getresponse()
+            return jsonData
+            # payload = json.dumps(jsonData)
+            # headers = {
+            #     'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
+            #     'Content-Type': 'application/json',
+            #     'Accept': 'application/json'
+            # }
+            # conn.request("POST", "/sms/2/text/advanced", payload, headers)
+            # res = conn.getresponse()
 
-            if res.status != 200:
-                logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
-                return None
+            # if res.status != 200:
+            #     logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
+            #     return None
             
-            data = res.read()
+            # data = res.read()
 
-            return data.decode("utf-8")
+            # return data.decode("utf-8")
         except Exception as e:
-            logger.exception(f"Exception in send_sms_infobip: {str(e)}")
+            logger.error(f"Exception in send_sms_infobip: {str(e)}")
             return None
 
+    @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_vfirst(self, msg, to):
         try:
             apiUrl = config.VFIRST_API_URL
@@ -74,9 +78,10 @@ class Sms:
             
             return resp_text
         except Exception as e:
-            logger.exception(f"Exception in send_sms_vfirst: {str(e)}")
+            logger.error(f"Exception in send_sms_vfirst: {str(e)}")
             return None
     
+    @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_connectexpress(self, msg, to):
         try:
             apiUrl  = config.CONNECT_EXPRESS_API_URL
@@ -87,5 +92,5 @@ class Sms:
 
             return resp_text
         except Exception as e:
-            logger.exception(f"Exception in send_sms_infobip: {str(e)}")
+            logger.error(f"Exception in send_sms_infobip: {str(e)}")
             return None

@@ -3,7 +3,7 @@ import json
 import requests
 import datetime
 from lib.helper import string_character_check, event_validate, user_type_validate
-from schemas.v1.template_adding import TemplateAddRequest, TemplateAddApiRequest, ParameterEncoder
+from schemas.template_upload import TemplateAddRequest, TemplateAddApiRequest, ParameterEncoder
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from enum import Enum
@@ -14,7 +14,10 @@ num = 5
 
 DEFAULT_TIMEOUT = 1
 
-mandatory_columns = ["Event", "ActionBy", "TemplateId", "Header","SMSContent","PushContent","EmailContent"]
+mandatory_columns = ["Event", "PaymentType", "ActionBy", "PrincipalTemplateId", "TemplateId", 
+                     "Header", "IsSMS", "SMSContent", "CreatedBy", "IsPush", "PushTitle",
+                     "PushContent", "PushActionLink", "IsEmail", "EmailSubject", 
+                     "EmailContent", "EmailReceipient"]
 
 
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -57,18 +60,7 @@ def is_valid_input(column_value_mapping: dict):
 
 
 def parse_to_template_add_request(data: list, header: list):
-    column_value_mapping = {
-        "Event": None,
-        "PaymentType": None,
-        "ActionBy": None,
-        "TemplateId": None,
-        "Header": None,
-        "SMSContent": None,
-        "CreatedBy": None,
-        "PushContent": None,
-        "EmailContent": None,
-        "CreatedAt": None
-    }
+    column_value_mapping = {col: None for col in mandatory_columns}
     current_time = datetime.datetime.now().isoformat()
     for idx in range(len(header)):
         column = header[idx]
@@ -77,24 +69,20 @@ def parse_to_template_add_request(data: list, header: list):
         if len(value) == 0:
             pass
         else:
-            if column in ["Event", "PaymentType", "ActionBy", "TemplateId", "Header", 
-                          "SMSContent", "CreatedBy", "PushContent", "EmailContent"]:
-                column_value_mapping[column] = value
-                column_value_mapping["CreatedAt"] = current_time
-            else:
-                raise Exception("unknown column")
+            column_value_mapping[column] = str(value)
+            column_value_mapping["CreatedAt"] = current_time
 
     if not is_valid_input(column_value_mapping):
-        raise Exception("not valid input")
+        raise Exception("Invalid input data")
     return TemplateAddRequest(column_value_mapping)
 
 
 def is_valid_header(data):
     if len(data) != len(set(data)):
-        raise Exception("duplicate columns present")
+        raise Exception("Duplicate columns found in header")
     for value in mandatory_columns:
         if value not in data:
-            raise Exception("field is missing")
+            raise Exception(f"Missing mandatory field: {value}")
 
 
 def read_csv_file(path_name: str):
@@ -114,30 +102,23 @@ def read_csv_file(path_name: str):
 
 
 def process_request(path_name: str):
-    template_data = read_csv_file(path_name)
+    try:
+        template_data = read_csv_file(path_name)
+        api_call(template_data)
 
-    for index in range(0, len(template_data), 50):
-        start_index = index
-        end_index = index + 50
-
-        if end_index > len(template_data):
-            end_index = len(template_data)
-
-        batch_requests = template_data[start_index:end_index]
-        api_call(batch_requests)
+    except Exception as e:
+        print(f"Error: {e}")
 
 def api_call(batch_requests: list):
     parameter = TemplateAddApiRequest(batch_requests)
-    print(json.dumps(parameter, cls=ParameterEncoder))
-    # try:
-    #     response = http.post("http://" + HOST + ":" + PORT + "/api/v1/wallet/batch/credit",
-    #                          data=json.dumps(parameter, cls=ParameterEncoder),
-    #                          headers={'X-Idempotent-Id': file_name},
-    #                          )
-    #     print(response.status_code)
-    #     print(response.json())
-    # except Exception as err:
-    #     print(err)
+    try:
+        response = http.post("http://" + HOST + ":" + PORT + "/api/v1/batch/template/add",
+                             json=json.loads(json.dumps(parameter, cls=ParameterEncoder))
+                             )
+        print(response.status_code)
+        print(response.json())
+    except Exception as err:
+        print(err)
 
 if __name__ == "__main__":
     try:
