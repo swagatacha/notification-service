@@ -3,9 +3,11 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 import logging
-from commons import config
+from commons import config, NotificationLogger
+from commons.utils import retry
 
-logger = logging.getLogger(__name__)
+log_clt = NotificationLogger()
+logger = log_clt.get_logger(__name__)
 
 class Email:
     def __init__(self):
@@ -15,6 +17,7 @@ class Email:
         self.smtp_pwd = config.SMTP_PASSWORD
         self.email_from = config.SMTP_EMAIL_FROM
 
+    @retry(max_retries=3, delay=1, backoff=2)
     def mail(self, body, subject, to, cc="", bcc="", replyto=""):
 
         try:
@@ -41,5 +44,5 @@ class Email:
             server.quit()
             return True
         except Exception as e:
-            logger.exception(f"Exception in send email : {str(e)}")
+            logger.error(f"Exception in send email : {str(e)}")
             return None

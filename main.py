@@ -5,26 +5,13 @@ import threading
 import uvicorn
 import api
 from api import health
-#import rabbitmq_queue_setup
-from consumers import (
-    order_placed, order_confirmed, order_shipped,
-    order_delivered, order_edit, user_registration
-)
-from commons import rabbitmq
-from biz.notification_processor import process_message
-
-consumers_list = [
-    ("order_placed", order_placed),
-    ("order_confirmed", order_confirmed),
-    ("order_shipped", order_shipped),
-    ("order_delivered", order_delivered),
-    ("order_edit", order_edit),
-    ("user_registration", user_registration)
-]
+from commons import config, RabbitMQConnection, RabbitMQConnectionPool
+from biz.notification_processor import process_message, logger
 
 app = FastAPI()
 
 app.include_router(health.router)
+rabbitmq_conn = RabbitMQConnectionPool(pool_size=10) if config.RABBITMQ_CONNECTION_POOL else RabbitMQConnection()
 
 for importer, package_name, ispkg in walk_packages(path=api.__path__):
     if ispkg:
@@ -32,28 +19,17 @@ for importer, package_name, ispkg in walk_packages(path=api.__path__):
         app.include_router(views.router)
 
 def start_all_consumers(): 
-    print("Fetching dynamically bound queues...")
-    queues = rabbitmq.get_bound_queues()
-    print(f"Queues detected: {queues}")
+    #rabbitmq_conn = RabbitMQConnection()
+    queues = rabbitmq_conn.get_bound_queues()
 
     for queue_name in queues:
-        print(f"Launching consumer thread for: {queue_name}")
+        logger.info(f"Launching consumer thread for: {queue_name}")
         threading.Thread(
-            target=rabbitmq.start_consumer,
+            target=rabbitmq_conn.start_consumer,
             args=(queue_name, process_message),
             daemon=True
         ).start()
 
 @app.on_event("startup")
 def startup_event():
-    print("Starting Consumers...")
     start_all_consumers()
-
-
-@app.on_event("shutdown")
-def shutdown_event():
-    print("Shutting down gracefully...")
-
-
-# if __name__ == "__main__":
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000)
