@@ -8,7 +8,7 @@ from handlers.push_handler import Push
 from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse
 import redis
 import traceback
-from commons import config, TemplateValueMapper, RedisClient
+from commons import config, TemplateValueMapper, RedisClient, EmailTemplateMapper
 
 
 class NotificationBiz:
@@ -23,7 +23,7 @@ class NotificationBiz:
 
         for val in request.data:
             client_request_id_parts = [val.Event]
-            client_request_id_parts += [part for part in [val.PaymentType, val.ActionBy] if part is not None]
+            client_request_id_parts += [part for part in [val.PaymentType, val.OrderType, val.ActionBy] if part is not None]
             client_request_id = "_".join(client_request_id_parts)
             try:
                 credit_response = self.__dal.template_add(val, client_request_id)
@@ -57,7 +57,22 @@ class NotificationBiz:
 
     def send_notification(self, message:dict):
         try:
-            parts = [message.get("message_key"), message.get("paymentType"), message.get("orderBy")]
+            message_key = message.get("message_key")
+            if "orderstatusid" not in message:
+                orderplacedby = "B" if message.get("orderplacedby") == "O" else  message.get("orderplacedby")
+                ordertype = "M" if message.get("ordertype") == "P" else  message.get("ordertype")
+                ordertype = ''
+                paymentType = str(message.get("paymenttype",""))
+                parts = [message_key, paymentType, ordertype, orderplacedby] 
+            elif int(message.get("orderstatusid")) == 8 :
+                orderplacedby = "B" if message.get("orderplacedby") == "O" else  message.get("orderplacedby")
+                ordertype = "M" if message.get("ordertype") == "P" else  message.get("ordertype")
+                ordertype = ''
+                paymentType = str(message.get("paymenttype",""))
+                parts = [message_key, paymentType, ordertype, orderplacedby] 
+            else:
+                parts = [message_key]
+
             client_request_id = "_".join(filter(None, parts))
 
             template_data = self.__dal.get_event_template(client_request_id)
@@ -77,12 +92,12 @@ class NotificationBiz:
                 sms_content = value_mapper.format_template(sms_content, template_values)
 
                 if active_provider == 'INFOBIP':
-                    resp = Sms(sms_header).send_sms_infobip(sms_content, mobileno,
+                    resp['sms'] = Sms(sms_header).send_sms_infobip(sms_content, mobileno,
                                                             template_data.PrincipalTemplateId, template_data.TemplateId)
                 elif active_provider == 'TEXTNATION':
-                    resp = Sms(sms_header).send_sms_connectexpress(sms_content, mobileno)
+                    resp['sms'] = Sms(sms_header).send_sms_connectexpress(sms_content, mobileno)
                 else:
-                    resp = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
+                    resp['sms'] = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
 
             if is_push == 'Y':
                 notification_details = {
@@ -91,11 +106,23 @@ class NotificationBiz:
                     "PushContent": template_data.PushContent,
                     "ActionLink": template_data.PushActionLink
                 }
-                Push().send_push(notification_details)
+                resp['push'] = Push().send_push(notification_details)
 
             if is_email == 'Y':
-                Email().mail()
+                value_mapper = TemplateValueMapper(template_data.EmailContent)
+                template_values = value_mapper.get_values()
+                email_content = value_mapper.format_template(template_data.EmailContent, template_values)
+                email_receipient = template_data.EmailReceipient if template_data.EmailReceipient is not None else message.get("emailid", "")
+                resp['email'] = Email().mail(EmailTemplateMapper().buildhtml(email_content), template_data.EmailSubject, email_receipient)
 
+            if resp:
+                data={
+                    "mobileNo": mobileno,
+                    "event": message.get("message_key"),
+                    "response": json.dumps(resp),
+                    "createdAt": datetime.utcnow()
+                }
+                self.__dal.save_log(data)
             return resp
         except Exception as e:
             logger.error(f"failed in send_notification:{traceback.format_exc()}")
@@ -107,7 +134,7 @@ def process_message(message):
     """
     try:
         redis_client = RedisClient().get_client()
-        if message.get("message_key") == "order_confirmed":
+        if message.get("message_key") == "order_shipped":
             updated_str = message.get("updateddate", "")
             updated_dt = datetime.strptime(updated_str, "%Y-%m-%dT%H:%M:%S.000Z")
 
@@ -118,14 +145,12 @@ def process_message(message):
             message_key = message.get("message_key")
             mobile_no = message.get("mobileno")
             redis_key = f"notif:{message_key}:{mobile_no}:{date}"
+            logger.info(f"redis key: {redis_key}")
             if not redis_client.exists(redis_key):
                 redis_client.setex(redis_key, ttl_seconds if ttl_seconds > 0 else 300, json.dumps(message))
-                item = NotificationBiz().send_notification(message)
-                return item
-            else:
-                item = NotificationBiz().send_notification(message)
-                return item
-
+                NotificationBiz().send_notification(message)
+        else:
+            NotificationBiz().send_notification(message)
     except Exception as e:
         logger.error(f"failed to process message: {traceback.format_exc()}")
         raise e

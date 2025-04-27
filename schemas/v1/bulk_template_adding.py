@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class TemplateAddRequest(BaseModel):
     Event: str
     PaymentType: Optional[str]
+    OrderType: Optional[str]
     ActionBy: Optional[str]
     PrincipalTemplateId: Optional[str]
     TemplateId: str
@@ -40,9 +41,10 @@ class TemplateAddResponseBase(BaseModel):
     message: Optional[str] = None
 
 class SuccessTemplateAddResponse(TemplateAddResponseBase):
-    SMSContent: str
-    PushContent: Optional[str] = None
-    EmailContent: Optional[str] = None
+    pass
+    # SMSContent: str
+    # PushContent: Optional[str] = None
+    # EmailContent: Optional[str] = None
     
 class FailureTemplateAddResponse(BaseModel):
     pass

@@ -19,7 +19,6 @@ for importer, package_name, ispkg in walk_packages(path=api.__path__):
         app.include_router(views.router)
 
 def start_all_consumers(): 
-    #rabbitmq_conn = RabbitMQConnection()
     queues = rabbitmq_conn.get_bound_queues()
 
     for queue_name in queues:

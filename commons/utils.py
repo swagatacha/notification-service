@@ -12,6 +12,7 @@ def retry(max_retries=3, delay=2, backoff=2):
             retries = 0
             current_delay = delay
             while retries < max_retries:
+                logger.info(f"retries:{retries} and max_retries:{max_retries}")
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:

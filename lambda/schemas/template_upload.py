@@ -5,6 +5,7 @@ class TemplateAddRequest:
     def __init__(self, data):
         self.Event = data['Event']
         self.PaymentType = data['PaymentType']
+        self.OrderType = data['OrderType']
         self.ActionBy = data['ActionBy']
         self.PrincipalTemplateId = data['PrincipalTemplateId']
         self.TemplateId = data['TemplateId']
