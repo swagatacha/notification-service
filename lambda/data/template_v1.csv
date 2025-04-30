@@ -1,53 +1,53 @@
-Event,PaymentType,ActionBy,PrincipalTemplateId,TemplateId,Header,IsSMS,SMSContent,CreatedBy,IsPush,PushTitle,PushContent,PushActionLink,IsEmail,EmailSubject,EmailContent,EmailReceipient
-order_placed,,C,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} with amount Rs {#orderamount#} has been placed successfully! Track your order here: {#url#}.
+Event,PaymentType,OrderType,ActionBy,PrincipalTemplateId,TemplateId,Header,IsSMS,SMSContent,CreatedBy,IsPush,PushTitle,PushContent,PushActionLink,IsEmail,EmailSubject,EmailContent,EmailReceipient
+order_placed,,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} with amount Rs {#orderamount#} has been placed successfully! Track your order here: {#url#}.
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_confirmed,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_confirmed,,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 Your order {#orderid#} has been confirmed! Track your order here: {#url#}
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_hold,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_hold,,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 Your order {#orderid#} is currently on hold due to {#reason#}. We will notify you once it is confirmed. Track your order here: {#url#}
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_delivered,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_delivered,,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 Your order {#orderid#} has been delivered! For any assistance, feel free to call {#customercare#}.
 SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,Online,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,Online,,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 your order {#orderid#} has been cancelled. A refund of Rs {#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
 SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,COD,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,COD,,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 your order {#orderid#} has been cancelled.
 
 SastaSundar wishes you health & happiness.",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,Online,HB,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to prescription mismatch. A refund of Rs {#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
+order_cancelled,Online,,HB,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to prescription mismatch. A refund of Rs {#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
 
 Please upload a new prescription and order again.
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,COD,HB,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to prescription mismatch. Please upload a new prescription and order again.
+order_cancelled,COD,,HB,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to prescription mismatch. Please upload a new prescription and order again.
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,Online,Admin,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to some unavoidable circumstances. A refund of Rs.{#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
+order_cancelled,Online,,Admin,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to some unavoidable circumstances. A refund of Rs.{#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_cancel,COD,Admin,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,COD,,Admin,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 
 Your order {#orderid#} has been cancelled due to some unavoidable circumstances.
 
 Team SastaSundar",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_edit,Online,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#reason#}. A refund of Rs.{#refundamount#} has been initiated to your source account.
+order_edit,Online,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. A refund of Rs.{#onlinerefund#} has been initiated to your source account.
 
 View updated order: {#url#}",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_edit,COD,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#reason#}. Your billed amount has been adjusted accordingly.
+order_edit,COD,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. Your billed amount has been adjusted accordingly.
 
 View updated order: {#url#}",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_edit,Wallet,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#reason#}. A refund of Rs.{#refundamount#} has been initiated to your wallet.
+order_edit,Wallet,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. A refund of Rs.{#walletrefund#} has been initiated to your wallet.
 
 View updated order: {#url#}",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_edit,Partial(wallet +online),,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#reason#}. A refund of Rs.{#refundamount#} has been initiated to your source account and rest to your SS wallet.
+order_edit,Wallet+Online,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. A refund of Rs.{#onlinerefund#} has been initiated to your source account and rest to your SS wallet.
 
 View updated order: {#url#}",sdasgupta1@genupathlabs.com,N,,,,N,,,
-order_shipped,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_shipped,,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 
 Your orders containing {#products#} items have been shipped. Track your orders in the SastaSundar app.",sdasgupta1@genupathlabs.com,N,,,,N,,,

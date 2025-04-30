@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+CUSTOMER_CARE = os.getenv("CUSTOMER_CARE")
 # Read RabbitMQ configuration from environment variables
 RABBITMQ_CONNECTION_POOL = os.getenv("RABBITMQ_CONNECTION_POOL", "false").lower() == "true"
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
@@ -11,6 +12,7 @@ RABBITMQ_MANAGEMENT_PORT = int(os.getenv("RABBITMQ_MANAGEMENT_PORT"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 EXCHANGE_NAME = os.getenv("EXCHANGE_NAME")
+MSG_TTL_MS = os.getenv("MSG_TTL_MS")
 # Read SMS Provider Details from environment variables
 SMS_DEFAULT_HEADER = os.getenv("SMS_DEFAULT_HEADER")
 ACTIVE_SMS_PROVIDER = os.getenv("ACTIVE_SMS_PROVIDER")
@@ -42,3 +44,13 @@ redis = {
     'host': os.getenv('REDIS_HOST'),
     'port': int(os.getenv('REDIS_PORT'))
 }
+
+STATUS_PRIORITY = {
+    'order_placed': 1,
+    'order_confirmed': 2,
+    'order_shipped': 3,
+    'order_delivered': 4,
+    'order_cancelled': 5
+}
+
+TERMINATION_STATES = {"order_cancelled", "order_delivered", "customer_denied", "payment_failed"}

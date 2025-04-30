@@ -1,21 +1,72 @@
+import base64
+from commons import config, NotificationLogger
+from .enums import PaymentTypeMap, OrderTypeMap, ActionByMap, map_enum_value
+
+log_clt = NotificationLogger()
+logger = log_clt.get_logger(__name__)
+
 class TemplateValueMapper:
 
     def __init__(self, message: dict):
         self.message = message
 
     def get_values(self) -> dict:
+        logger.info(self.message)
         return {
             "pname": self.message.get("fname", "Customer"),
-            "orderamount": self.message.get("orderbillamount", ""),
+            "orderamount": self.message.get("orderamount", 0),
             "orderid": self.message.get("orderid", ""),
-            "products": self.message.get("productname", ""),
-            "refundamount":self.message.get("refundamount", ""),
-            "reason":self.message.get("reason", ""),
-            "url":""
+            "products": self.get_products_display(self.message.get("products", [])),
+            "onlinerefund": self.message.get("onlinerefund", "0"),
+            "walletrefund": self.message.get("walletrefund", "0"),
+            "codamount": self.message.get("codamount", "0"),
+            "reason": self.message.get("reason", ""),
+            "url": self.generate_url(self.message.get("orderid", "")),
+            "discountpercent": self.message.get("discountpercent", ""),
+            "discountamount": self.message.get("discountamount", ""),
+            "couponcode": self.message.get("couponcode", ""),
+            "customercare": config.CUSTOMER_CARE
         }
+    
+    
+    def get_products_display(self, products):
+        if not products:
+            return ""
+        first_product = products[0]
+        suffix = f" +{len(products) - 1}" if len(products) > 1 else ""
+        if len(first_product) > 27:
+            return first_product[:25] + "..." + suffix
+        else:
+            return first_product + suffix
     
     def format_template(self, template: str, values: dict) -> str:
         for key, val in values.items():
             template = template.replace(f"{{#{key}#}}", str(val))
         return template
+    
+    def generate_url(self, orderid):
+        if orderid is None:
+            return None
+        track_orderid = base64.b64encode(str(orderid).encode('utf-8')).strip()
+        track_orderid = track_orderid.decode('utf-8')
+        return f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
+    
+    @staticmethod
+    def formatted_event_id(client_request_id:str) -> str:
+        parts = client_request_id.split("_")
+        if len(parts) == 2:
+            return client_request_id
+        
+        event_name = "_".join(parts[:2])
+        mapped_parts = [event_name]
+
+        if len(parts) > 2:
+            mapped_parts.append(map_enum_value(PaymentTypeMap, str(parts[2])))
+        if len(parts) > 3:
+            mapped_parts.append(map_enum_value(ActionByMap, str(parts[3])))
+        if len(parts) > 4:
+            mapped_parts.append(map_enum_value(OrderTypeMap, str(parts[4])))
+
+        return "_".join(mapped_parts)
+        
 

@@ -21,6 +21,10 @@ class Email:
     def mail(self, body, subject, to, cc="", bcc="", replyto=""):
 
         try:
+            if to is None:
+                msg = "Email Receipient is not valid"
+                return msg
+            
             if type(to) is type([]) : to = ", ".join(to)
             if type(cc) is type([]) : cc = ", ".join(cc)
             if type(bcc) is type([]) : bcc = ", ".join(bcc)
@@ -42,7 +46,7 @@ class Email:
             server.sendmail(self.email_from , recipient, msg_full)
 
             server.quit()
-            return True
+            return f"Mail Sent to {to}"
         except Exception as e:
             logger.error(f"Exception in send email : {str(e)}")
-            return None
+            return str(e)

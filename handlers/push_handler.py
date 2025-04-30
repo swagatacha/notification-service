@@ -16,6 +16,13 @@ class Push:
     @retry(max_retries=3, delay=1, backoff=2)
     def send_push(self, notification_details):
         try:
+            if notification_details.get('token') is None:
+                msg = "Token is not valid"
+                return msg
+            if notification_details.get('PushTitle') is None or notification_details.get('PushContent') is None:
+                msg = "Invalid Push Configuration"
+                return msg
+            
             deviceToken       = notification_details.get('token')
             MsgTitle    = notification_details.get('PushTitle')
             MsgBody     = notification_details.get('PushContent')
@@ -50,12 +57,12 @@ class Push:
             )
 
             response = messaging.send(message)
-            return True
+            return response
 
         except messaging.UnregisteredError as UnregisteredError:
             logger.error(f"Unregistered token. Please refresh your FCM token:{str(UnregisteredError)}")
-            return False
+            return str(UnregisteredError)
 
         except Exception as e:
             logger.error(f"Push Exception: {str(e)}")
-            return False
+            return str(e)

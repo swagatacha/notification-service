@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from commons import rabbitmq, mongodb
+from commons import RabbitMQConnection, RabbitMQConnectionPool, config, Mongo
 
 router = APIRouter()
 
@@ -27,15 +27,19 @@ def readiness_probe():
 
 def is_rabbitmq_healthy():
     try:
-        connection = rabbitmq.get_connection()
-        connection.close()
+        rabbitmq_conn = RabbitMQConnectionPool(pool_size=10) if config.RABBITMQ_CONNECTION_POOL else RabbitMQConnection()
+        connection = rabbitmq_conn.get_connection()
+        if isinstance(rabbitmq_conn, RabbitMQConnectionPool):
+            rabbitmq_conn.release_connection(connection)
+        else:
+            connection.close()
         return True
     except Exception:
         return False
 
 def is_mongodb_healthy():
     try:
-        mongo = mongodb.Mongo()
+        mongo = Mongo()
         mongo.db().command("ping")
         mongo.close()
         return True

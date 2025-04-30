@@ -47,7 +47,6 @@ def post(url, data, headers={}, authdata = None, ssl=False, files = {}):
             resp = requests.post(url, data=data, files=files, auth=prepauth(authdata), verify=ssl)
 
     try:
-        print(resp)
         return json.loads(resp.text), resp
     except:
         return resp.text, resp

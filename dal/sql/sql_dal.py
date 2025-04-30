@@ -1,10 +1,11 @@
 import traceback
 from dal.template_dal import TemplateDal
-from commons import Mongo, NotificationLogger
+from commons import Mongo, NotificationLogger, TemplateValueMapper
 from biz.errors import NotFoundError
 from dal.errors import IdempotencyError
 from schemas.v1 import DalTemplateRequest, SuccessTemplateAddResponse
 from schemas.v1 import SuccessTemplateResponse
+from datetime import datetime, timedelta
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -24,16 +25,17 @@ class NoSQLDal(TemplateDal):
             dbname.template_pool.update_one({"EventId": str(idempotency_key)}, {"$set": request.dict()}, upsert=True)
 
             return SuccessTemplateAddResponse(
-                EventId=idempotency_key,
+                EventId=TemplateValueMapper.formatted_event_id(idempotency_key),
                 Event=request.Event,
                 SMSContent=request.SMSContent,
+                PushTitle=request.PushTitle,
                 PushContent=request.PushContent,
+                EmailSubject=request.EmailSubject,
                 EmailContent=request.EmailContent,
                 status="success",
                 message="Template added successfully"
             )
         except Exception as e:
-            logger.error(e)
             raise e
         
     def get_event_template(self, eventId):
@@ -64,6 +66,26 @@ class NoSQLDal(TemplateDal):
                     EmailContent=item['EmailContent'],
                     EmailReceipient=item['EmailReceipient']
                 )
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    def save_log(self, request: dict):
+        dbname = self.__datastore.db()
+        try:
+            return dbname.notification_log.insert_one(request).inserted_id
+        except Exception as e:
+            logger.error(e)
+            raise e
+        
+    def delete_old_logs(self):
+        try:
+            dbname = self.__datastore.db()
+            logs = dbname.notification_log
+
+            threshold_date = datetime.utcnow() - timedelta(days=3)
+            result = logs.delete_many({"createdAt": {"$lt": threshold_date}})
+            return result.deleted_count
         except Exception as e:
             logger.error(e)
             raise e

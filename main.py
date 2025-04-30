@@ -19,7 +19,6 @@ for importer, package_name, ispkg in walk_packages(path=api.__path__):
         app.include_router(views.router)
 
 def start_all_consumers(): 
-    #rabbitmq_conn = RabbitMQConnection()
     queues = rabbitmq_conn.get_bound_queues()
 
     for queue_name in queues:
@@ -29,6 +28,15 @@ def start_all_consumers():
             args=(queue_name, process_message),
             daemon=True
         ).start()
+
+    # Additionally consume DLQ
+    # dlq_name = f"{config.EXCHANGE_NAME}.dlq"
+    # logger.info(f"Launching consumer thread for DLQ: {dlq_name}")
+    # threading.Thread(
+    #     target=rabbitmq_conn.start_consumer,
+    #     args=(dlq_name, process_dlq_message),   # <<< Important
+    #     daemon=True
+    # ).start()
 
 @app.on_event("startup")
 def startup_event():
