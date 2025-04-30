@@ -29,6 +29,15 @@ def start_all_consumers():
             daemon=True
         ).start()
 
+    # Additionally consume DLQ
+    # dlq_name = f"{config.EXCHANGE_NAME}.dlq"
+    # logger.info(f"Launching consumer thread for DLQ: {dlq_name}")
+    # threading.Thread(
+    #     target=rabbitmq_conn.start_consumer,
+    #     args=(dlq_name, process_dlq_message),   # <<< Important
+    #     daemon=True
+    # ).start()
+
 @app.on_event("startup")
 def startup_event():
     start_all_consumers()

@@ -41,10 +41,11 @@ class TemplateAddResponseBase(BaseModel):
     message: Optional[str] = None
 
 class SuccessTemplateAddResponse(TemplateAddResponseBase):
-    pass
-    # SMSContent: str
-    # PushContent: Optional[str] = None
-    # EmailContent: Optional[str] = None
+    SMSContent: Optional[str] = None
+    PushTitle: Optional[str] = None
+    PushContent: Optional[str] = None
+    EmailSubject: Optional[str] = None
+    EmailContent: Optional[str] = None
     
 class FailureTemplateAddResponse(BaseModel):
     pass

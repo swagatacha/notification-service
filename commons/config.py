@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+CUSTOMER_CARE = os.getenv("CUSTOMER_CARE")
 # Read RabbitMQ configuration from environment variables
 RABBITMQ_CONNECTION_POOL = os.getenv("RABBITMQ_CONNECTION_POOL", "false").lower() == "true"
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
@@ -43,3 +44,13 @@ redis = {
     'host': os.getenv('REDIS_HOST'),
     'port': int(os.getenv('REDIS_PORT'))
 }
+
+STATUS_PRIORITY = {
+    'order_placed': 1,
+    'order_confirmed': 2,
+    'order_shipped': 3,
+    'order_delivered': 4,
+    'order_cancelled': 5
+}
+
+TERMINATION_STATES = {"order_cancelled", "order_delivered", "customer_denied", "payment_failed"}

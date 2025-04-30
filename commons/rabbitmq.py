@@ -201,3 +201,4 @@ class RabbitMQConnectionPool:
                         logger.warning(f"Error closing connection: {close_err}")
 
         logger.error(f"Max retry attempts reached for {queue_name}. Exiting consumer thread.")
+
