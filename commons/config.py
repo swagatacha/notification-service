@@ -13,6 +13,7 @@ RABBITMQ_USER = os.getenv("RABBITMQ_USER")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 EXCHANGE_NAME = os.getenv("EXCHANGE_NAME")
 MSG_TTL_MS = os.getenv("MSG_TTL_MS")
+REQUEUE_MAX_RETRIES=int(os.getenv("REQUEUE_MAX_RETRIES"))
 # Read SMS Provider Details from environment variables
 SMS_DEFAULT_HEADER = os.getenv("SMS_DEFAULT_HEADER")
 ACTIVE_SMS_PROVIDER = os.getenv("ACTIVE_SMS_PROVIDER")

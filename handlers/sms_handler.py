@@ -51,6 +51,7 @@ class Sms:
             }
             conn.request("POST", "/sms/2/text/advanced", payload, headers)
             res = conn.getresponse()
+            logger.info(f'sms api response code:{res.status}')
 
             if res.status != 200:
                 logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
