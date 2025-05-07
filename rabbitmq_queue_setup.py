@@ -19,7 +19,8 @@ class RabbitMQSetup:
     def __init__(self):
         logger.info(f"rabbitmq conection:{type(rabbitmq_conn)}") 
         self.connection = rabbitmq_conn.get_connection()
-        self.channel = self.connection.get_channel() if isinstance(rabbitmq_conn, RabbitMQConnection) else self.connection.channel()
+        #self.channel = self.connection.get_channel() if isinstance(rabbitmq_conn, RabbitMQConnection) else self.connection.channel()
+        self.channel = self.connection.channel()
         self.EXCHANGE_NAME = config.EXCHANGE_NAME
         self.setup_rabbitmq()
 
