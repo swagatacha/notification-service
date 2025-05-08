@@ -6,9 +6,9 @@ from handlers.email_handler import Email
 from handlers.sms_handler import Sms
 from handlers.push_handler import Push
 from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse
-import redis
 import traceback
 from commons import config, TemplateValueMapper, RedisClient, EmailTemplateMapper
+from datetime import datetime, timedelta
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -129,7 +129,7 @@ class NotificationBiz:
                 data={
                     "mobileNo": mobileno,
                     "event": message.get("message_key"),
-                    "orderId":message.get("orderid"),
+                    "orderId":message.get("orderid",''),
                     "response": json.dumps(resp),
                     "createdAt": datetime.utcnow()
                 }
@@ -140,7 +140,7 @@ class NotificationBiz:
             data={
                     "mobileNo": message.get("mobileno"),
                     "event": message.get("message_key"),
-                    "orderId":message.get("orderid"),
+                    "orderId":message.get("orderid",''),
                     "response": str(e),
                     "createdAt": datetime.utcnow()
                 }
@@ -168,18 +168,38 @@ def is_same_day_multi_shipped(redis_client, message):
     return False
 
 def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
-    logger.info(f"Fallback triggered for order {order_id}. Processing buffered messages in order.")
-    buffered_items = []
+    logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages for age > 3 hours.")
+    now = datetime.utcnow()
+
     for status, priority in sorted(config.STATUS_PRIORITY.items(), key=lambda x: x[1]):
         field = f"{order_id}:{status}"
-        buffered_msg = redis_client.hget(pending_hash_key, field)
-        if buffered_msg:
-            buffered_items.append((priority, status, json.loads(buffered_msg)))
+        buffered_msg_raw = redis_client.hget(pending_hash_key, field)
+        if not buffered_msg_raw:
+            continue
 
-    for _, status, buffered_msg in buffered_items:
-        logger.info(f"Processing fallback message {status} for order {order_id}.")
-        redis_client.hdel(pending_hash_key, f"{order_id}:{status}")
-        order_state_consistency(redis_client, buffered_msg)
+        try:
+            buffered_msg = json.loads(buffered_msg_raw)
+            timestamp_str = buffered_msg.get("received_at")
+            if not timestamp_str:
+                logger.warning(f"Missing received_at in buffered message for {field}, skipping.")
+                continue
+
+            msg_time = datetime.utcfromtimestamp(timestamp_str)
+            age = now - msg_time
+            logger.info(f'age is {age}')
+
+            if age >= timedelta(hours=3):
+                logger.info(f"Processing stale buffered message {status} for order {order_id} (age: {age}).")
+                redis_client.hdel(pending_hash_key, field)
+                biz = NotificationBiz()
+                biz.send_notification(buffered_msg.get('message'))
+                redis_client.hset("notification_status_all", order_id, status)
+            else:
+                logger.info(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+
+        except Exception as e:
+            logger.error(f"Error while processing buffered message for {field}: {e}. Deleting to avoid blockage.")
+            redis_client.hdel(pending_hash_key, field)
 
 def order_state_consistency(redis_client, message):
     biz = NotificationBiz()
@@ -190,13 +210,6 @@ def order_state_consistency(redis_client, message):
     # Centralized Redis hash keys
     status_hash_key = "notification_status_all"
     pending_hash_key = "pending_notifications_all"
-    # first_seen_key = f"first_seen:{order_id}"
-
-    # first_seen_ts = redis_client.get(f"first_seen:{order_id}")
-    # if not redis_client.exists(first_seen_key):
-    #     redis_client.setex(first_seen_key, 14400, int(datetime.utcnow().timestamp())) 
-    # else:
-    #     first_seen_ts = int(first_seen_ts)
 
     # Fetch current status from the centralized hash
     current_status = redis_client.hget(status_hash_key, order_id)
@@ -236,13 +249,13 @@ def order_state_consistency(redis_client, message):
 
     if new_priority > current_priority + 1:
         logger.info(f"Buffering {new_status} for order {order_id}, waiting for earlier state.")
-        redis_client.hset(pending_hash_key, f"{order_id}:{new_status}", json.dumps(message))
+        buffered_entry = {
+            "message": message,
+            "received_at": int(datetime.utcnow().timestamp())
+        }
+        redis_client.hset(pending_hash_key, f"{order_id}:{new_status}", json.dumps(buffered_entry))
         data['response'] = f"Buffering {new_status} for order {order_id}, waiting for earlier state."
         biz.save_log(data)
-
-        # elapsed = datetime.utcnow().timestamp() - first_seen_ts if first_seen_ts is not None else 0
-        # if elapsed > 3 * 3600:
-        #     buffer_queue_fallback(redis_client, order_id, pending_hash_key)
         return
 
     # Special case: same-day shipment deduplication
@@ -264,9 +277,12 @@ def order_state_consistency(redis_client, message):
             pending_field = f"{order_id}:{status}"
             buffered = redis_client.hget(pending_hash_key, pending_field)
             if buffered:
+                buffered_obj = json.loads(buffered)
+                message_to_send = buffered_obj.get('message')
                 logger.info(f"Sending buffered {status} for order {order_id}.")
                 redis_client.hdel(pending_hash_key, pending_field)
-                order_state_consistency(redis_client, json.loads(buffered))
+                if message_to_send:
+                    order_state_consistency(redis_client, message_to_send)
             break
 
 
