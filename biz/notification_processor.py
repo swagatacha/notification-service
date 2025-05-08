@@ -167,20 +167,6 @@ def is_same_day_multi_shipped(redis_client, message):
     redis_client.expire(daily_key, ttl_seconds if ttl_seconds > 0 else 300)
     return False
 
-def buffer_queue_fallback_old(redis_client, order_id, pending_hash_key):
-    logger.info(f"Fallback triggered for order {order_id}. Processing buffered messages in order.")
-    buffered_items = []
-    for status, priority in sorted(config.STATUS_PRIORITY.items(), key=lambda x: x[1]):
-        field = f"{order_id}:{status}"
-        buffered_msg = redis_client.hget(pending_hash_key, field)
-        if buffered_msg:
-            buffered_items.append((priority, status, json.loads(buffered_msg)))
-
-    for _, status, buffered_msg in buffered_items:
-        logger.info(f"Processing fallback message {status} for order {order_id}.")
-        redis_client.hdel(pending_hash_key, f"{order_id}:{status}")
-        order_state_consistency(redis_client, buffered_msg)
-
 def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
     logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages for age > 3 hours.")
     now = datetime.utcnow()
