@@ -46,15 +46,30 @@ class RabbitMQConnection(metaclass=Singleton):
     def declare_managed_queue(self, channel, queue_name):
         dlq_name = f"{config.EXCHANGE_NAME}.dlq"
 
-        channel.queue_declare(queue=dlq_name, durable=True)
-        args = {
-            'x-dead-letter-exchange': '',
-            'x-dead-letter-routing-key': dlq_name,
-            'x-message-ttl': int(config.MSG_TTL_MS)
-        }
+        dlq_name = f"{config.EXCHANGE_NAME}.dlq"
 
-        channel.queue_declare(queue=queue_name, durable=True, arguments=args)
-        logger.info(f"Declared queue '{queue_name}' with DLQ '{dlq_name}'")
+        #channel.queue_declare(queue=dlq_name, durable=True)
+        try:
+            channel.queue_declare(queue=dlq_name, durable=True, passive=True)
+            logger.info(f"DLQ '{dlq_name}' already exists.")
+        except pika.exceptions.ChannelClosedByBroker:
+            logger.warning(f"DLQ '{dlq_name}' not found. Declaring it.")
+            channel = self.get_connection().channel()
+            channel.queue_declare(queue=dlq_name, durable=True)
+
+        try:
+            channel.queue_declare(queue=queue_name, durable=True, passive=True)
+            logger.info(f"Queue '{queue_name}' already exists.")
+        except pika.exceptions.ChannelClosedByBroker:
+            logger.warning(f"Queue '{queue_name}' not found. Declaring it with arguments.")
+            channel = self.get_connection().channel()
+            args = {
+                'x-dead-letter-exchange': '',
+                'x-dead-letter-routing-key': dlq_name,
+                'x-message-ttl': int(config.MSG_TTL_MS)
+            }
+            channel.queue_declare(queue=queue_name, durable=True, arguments=args)
+            logger.info(f"Declared queue '{queue_name}' with DLQ '{dlq_name}'")
 
     def start_consumer(self, queue_name, callback, max_attempts=5):
         attempt = 0
@@ -222,16 +237,28 @@ class RabbitMQConnectionPool:
     def declare_managed_queue(self, channel, queue_name):
         dlq_name = f"{config.EXCHANGE_NAME}.dlq"
 
-        channel.queue_declare(queue=dlq_name, durable=True)
-        args = {
-            'x-dead-letter-exchange': '',
-            'x-dead-letter-routing-key': dlq_name,
-            'x-message-ttl': int(config.MSG_TTL_MS)
-        }
+        #channel.queue_declare(queue=dlq_name, durable=True)
+        try:
+            channel.queue_declare(queue=dlq_name, durable=True, passive=True)
+            logger.info(f"DLQ '{dlq_name}' already exists.")
+        except pika.exceptions.ChannelClosedByBroker:
+            logger.warning(f"DLQ '{dlq_name}' not found. Declaring it.")
+            channel = self.get_connection().channel()
+            channel.queue_declare(queue=dlq_name, durable=True)
 
-        channel.queue_declare(queue=queue_name, durable=True, arguments=args)
-        logger.info(f"Declared queue '{queue_name}' with DLQ '{dlq_name}'")
-
+        try:
+            channel.queue_declare(queue=queue_name, durable=True, passive=True)
+            logger.info(f"Queue '{queue_name}' already exists.")
+        except pika.exceptions.ChannelClosedByBroker:
+            logger.warning(f"Queue '{queue_name}' not found. Declaring it with arguments.")
+            channel = self.get_connection().channel()
+            args = {
+                'x-dead-letter-exchange': '',
+                'x-dead-letter-routing-key': dlq_name,
+                'x-message-ttl': int(config.MSG_TTL_MS)
+            }
+            channel.queue_declare(queue=queue_name, durable=True, arguments=args)
+            logger.info(f"Declared queue '{queue_name}' with DLQ '{dlq_name}'")
     
     def start_consumer(self, queue_name, callback, max_attempts=5):
         attempt = 0

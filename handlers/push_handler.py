@@ -61,8 +61,8 @@ class Push:
 
         except messaging.UnregisteredError as UnregisteredError:
             logger.error(f"Unregistered token. Please refresh your FCM token:{str(UnregisteredError)}")
-            return str(UnregisteredError)
+            raise UnregisteredError
 
         except Exception as e:
             logger.error(f"Push Exception: {str(e)}")
-            return str(e)
+            raise e

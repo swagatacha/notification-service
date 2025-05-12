@@ -6,7 +6,6 @@ from handlers.email_handler import Email
 from handlers.sms_handler import Sms
 from handlers.push_handler import Push
 from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse
-import traceback
 from commons import config, TemplateValueMapper, RedisClient, EmailTemplateMapper
 from datetime import datetime, timedelta
 
@@ -136,7 +135,7 @@ class NotificationBiz:
                 self.save_log(data)
             return resp
         except Exception as e:
-            logger.error(f"failed in send_notification:{traceback.format_exc()}")
+            logger.error(f"failed in send_notification:{e}")
             data={
                     "mobileNo": message.get("mobileno"),
                     "event": message.get("message_key"),
@@ -297,6 +296,6 @@ def process_message(message):
         else:
             NotificationBiz().send_notification(message)
     except Exception as e:
-        logger.error(f"failed to process message: {traceback.format_exc()}")
+        logger.error(f"failed to process message: {e}")
         raise e
 

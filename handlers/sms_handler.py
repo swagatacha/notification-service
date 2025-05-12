@@ -22,7 +22,7 @@ class Sms:
                 return msg
             
             apiUrl = config.INFOBIP_API_URL
-            conn = http.client.HTTPSConnection(apiUrl)
+            # conn = http.client.HTTPSConnection(apiUrl)
             jsonData = {
                 "messages": [
                     {
@@ -44,25 +44,26 @@ class Sms:
             }
 
             payload = json.dumps(jsonData)
-            headers = {
-                'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-            conn.request("POST", "/sms/2/text/advanced", payload, headers)
-            res = conn.getresponse()
-            logger.info(f'sms api response code:{res.status}')
+            return payload
+            # headers = {
+            #     'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
+            #     'Content-Type': 'application/json',
+            #     'Accept': 'application/json'
+            # }
+            # conn.request("POST", "/sms/2/text/advanced", payload, headers)
+            # res = conn.getresponse()
+            # logger.info(f'sms api response code:{res.status}')
 
-            if res.status != 200:
-                logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
-                return f"Infobip SMS send failed: {res.status} {res.reason}"
+            # if res.status != 200:
+            #     logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
+            #     return f"Infobip SMS send failed: {res.status} {res.reason}"
             
-            data = res.read()
+            # data = res.read()
 
-            return data.decode("utf-8")
+            # return data.decode("utf-8")
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e
 
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_vfirst(self, msg, to):
@@ -93,7 +94,7 @@ class Sms:
             return resp_text
         except Exception as e:
             logger.error(f"Exception in send_sms_vfirst: {str(e)}")
-            return str(e)
+            raise e
     
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_connectexpress(self, msg, to):
@@ -114,4 +115,4 @@ class Sms:
             return resp_text
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e

@@ -33,7 +33,7 @@ def start_all_consumers():
     dlq_name = f"{config.EXCHANGE_NAME}.dlq"
     logger.info(f"Launching consumer thread for DLQ: {dlq_name}")
     threading.Thread(
-        target=rabbitmq_conn.start_consumer,
+        target=rabbitmq_conn.requeue_from_dlq,
         args=(dlq_name, process_message),   # <<< Important
         daemon=True
     ).start()

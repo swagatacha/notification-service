@@ -11,7 +11,6 @@ class TemplateValueMapper:
         self.message = message
 
     def get_values(self) -> dict:
-        logger.info(self.message)
         return {
             "pname": self.message.get("fname", "Customer"),
             "orderamount": self.message.get("orderamount", 0),
