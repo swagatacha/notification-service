@@ -49,4 +49,4 @@ class Email:
             return f"Mail Sent to {to}"
         except Exception as e:
             logger.error(f"Exception in send email : {str(e)}")
-            return str(e)
+            raise e

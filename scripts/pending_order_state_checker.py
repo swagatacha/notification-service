@@ -1,5 +1,8 @@
-from commons import RedisClient
+from commons import RedisClient, NotificationLogger
 from biz.notification_processor import buffer_queue_fallback
+
+log_clt = NotificationLogger()
+logger = log_clt.get_logger(__name__)
 
 def scan_and_process():
     redis_client = RedisClient().get_client()
@@ -14,10 +17,10 @@ def scan_and_process():
             full_key_str = full_key.decode() if isinstance(full_key, bytes) else full_key
             order_id = full_key_str.split(":")[0]
 
-            print(f"Processing order {order_id} from key {full_key_str}")
+            logger.info(f"Processing order {order_id} from key {full_key_str}")
             buffer_queue_fallback(redis_client, order_id, pending_key)
         except Exception as e:
-            print(f"Error processing key {full_key}: {e}")
+            logger.error(f"Error processing key {full_key}: {e}")
 
 if __name__ == "__main__":
     scan_and_process()

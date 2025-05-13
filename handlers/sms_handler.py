@@ -44,6 +44,7 @@ class Sms:
             }
 
             payload = json.dumps(jsonData)
+
             headers = {
                 'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
                 'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ class Sms:
             return data.decode("utf-8")
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e
 
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_vfirst(self, msg, to):
@@ -93,7 +94,7 @@ class Sms:
             return resp_text
         except Exception as e:
             logger.error(f"Exception in send_sms_vfirst: {str(e)}")
-            return str(e)
+            raise e
     
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_connectexpress(self, msg, to):
@@ -114,4 +115,4 @@ class Sms:
             return resp_text
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e
