@@ -167,8 +167,11 @@ def is_same_day_multi_shipped(redis_client, message):
     return False
 
 def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
-    logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages for age > 3 hours.")
+    logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages older than 3 hours.")
     now = datetime.utcnow()
+    status_hash_key = "notification_status_all"
+    biz = NotificationBiz()
+    statuses = list(config.STATUS_PRIORITY.keys())
 
     for status, priority in sorted(config.STATUS_PRIORITY.items(), key=lambda x: x[1]):
         field = f"{order_id}:{status}"
@@ -178,23 +181,44 @@ def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
 
         try:
             buffered_msg = json.loads(buffered_msg_raw)
-            timestamp_str = buffered_msg.get("received_at")
-            if not timestamp_str:
-                logger.warning(f"Missing received_at in buffered message for {field}, skipping.")
+            received_at = buffered_msg.get("received_at")
+            message = buffered_msg.get("message")
+
+            if not received_at or not message:
+                logger.warning(f"Incomplete buffered message for {field}, skipping.")
+                redis_client.hdel(pending_hash_key, field)
                 continue
 
-            msg_time = datetime.utcfromtimestamp(timestamp_str)
+            msg_time = datetime.utcfromtimestamp(received_at)
             age = now - msg_time
-            logger.info(f'age is {age}')
 
-            if age >= timedelta(hours=3):
-                logger.info(f"Processing stale buffered message {status} for order {order_id} (age: {age}).")
-                redis_client.hdel(pending_hash_key, field)
-                biz = NotificationBiz()
-                biz.send_notification(buffered_msg.get('message'))
-                redis_client.hset("notification_status_all", order_id, status)
-            else:
-                logger.info(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+            if status in config.TERMINATION_STATES:
+                logger.info(f"Terminal state {status} found for order {order_id}. Processing immediately.")
+                biz.send_notification(message)
+                pipe = redis_client.pipeline()
+                pipe.hdel(pending_hash_key, field)
+                pipe.hset(status_hash_key, order_id, status)
+                pipe.execute()
+                
+                # Clean up all buffered statuses for this order
+                for s in statuses:
+                    redis_client.hdel(pending_hash_key, f"{order_id}:{s}")
+                return  # Stop processing any further statuses
+
+            # if age < timedelta(hours=1):
+            #     logger.warning(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+            #     continue
+
+            if status == "order_shipped" and is_same_day_multi_shipped(redis_client, message):
+                logger.info(f"Shipment notification already sent today for order {order_id}. Skipping.")
+                continue
+
+            logger.info(f"Processing stale buffered message {status} for order {order_id} (age: {age}).")
+            biz.send_notification(message)
+            pipe = redis_client.pipeline()
+            pipe.hdel(pending_hash_key, field)
+            pipe.hset(status_hash_key, order_id, status)
+            pipe.execute()
 
         except Exception as e:
             logger.error(f"Error while processing buffered message for {field}: {e}. Deleting to avoid blockage.")

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CUSTOMER_CARE = os.getenv("CUSTOMER_CARE")
+AWS_SECRET_REGION_NAME = os.getenv("AWS_SECRET_REGION_NAME")
 # Read RabbitMQ configuration from environment variables
 RABBITMQ_CONNECTION_POOL = os.getenv("RABBITMQ_CONNECTION_POOL", "false").lower() == "true"
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")

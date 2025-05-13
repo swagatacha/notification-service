@@ -7,6 +7,7 @@ import api
 from api import health
 from commons import config, RabbitMQConnection, RabbitMQConnectionPool
 from biz.notification_processor import process_message, logger
+from biz.dlq_processor import DlqProcessor
 
 app = FastAPI()
 
@@ -33,8 +34,7 @@ def start_all_consumers():
     dlq_name = f"{config.EXCHANGE_NAME}.dlq"
     logger.info(f"Launching consumer thread for DLQ: {dlq_name}")
     threading.Thread(
-        target=rabbitmq_conn.requeue_from_dlq,
-        args=(dlq_name, process_message),   # <<< Important
+        target=DlqProcessor.requeue_from_dlq,
         daemon=True
     ).start()
 
