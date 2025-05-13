@@ -205,9 +205,9 @@ def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
                     redis_client.hdel(pending_hash_key, f"{order_id}:{s}")
                 return  # Stop processing any further statuses
 
-            # if age < timedelta(hours=1):
-            #     logger.warning(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
-            #     continue
+            if age < timedelta(hours=3):
+                logger.warning(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+                continue
 
             if status == "order_shipped" and is_same_day_multi_shipped(redis_client, message):
                 logger.info(f"Shipment notification already sent today for order {order_id}. Skipping.")
