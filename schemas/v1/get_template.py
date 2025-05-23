@@ -3,23 +3,38 @@ from typing import List, Optional, Any
 from pydantic import BaseModel
 
 class TemplateResponseBase(BaseModel):
-    EventId: str
-    Event: str
+    eventId: str
+    event: str
 
 
 class SuccessTemplateResponse(TemplateResponseBase):
-    PaymentType: Optional[str]
-    ActionBy: Optional[str]
-    PrincipalTemplateId: Optional[str]
-    TemplateId: str
-    Header: str
-    IsSMS: str
-    SMSContent: str
-    IsPush: str
-    PushTitle: Optional[str]
-    PushContent: Optional[str]
-    PushActionLink: Optional[str]
-    IsEmail: str
-    EmailSubject: Optional[str]
-    EmailContent: Optional[str]
-    EmailReceipient: Optional[str]
+    paymentType: Optional[str] =None
+    actionBy: Optional[str] = None
+    principalTemplateId: Optional[str] = None
+    templateId: str
+    header: str
+    isSMS: str
+    smsContent: str
+    isPush: str
+    pushTitle: Optional[str] = None
+    pushContent: Optional[str] = None
+    pushActionLink: Optional[str] = None
+    isEmail: str
+    emailSubject: Optional[str] = None
+    emailContent: Optional[str] = None
+    emailReceipient: Optional[str] = None
+    isWhatsapp: str
+    waTemplate:Optional[str] = None
+    waBody:Optional[str] = None
+    waHeader:Optional[str] = None
+    waButtons:Optional[str] = None
+    isActive: bool
+
+class TemplateLists(BaseModel):
+    templates: List[SuccessTemplateResponse]
+    page:int
+    page_size:int
+    total_count:int
+
+class TemplateDetails(BaseModel):
+    details:SuccessTemplateResponse

@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+THREAD_POOL_SIZE=os.getenv("THREAD_POOL_SIZE")
 CUSTOMER_CARE = os.getenv("CUSTOMER_CARE")
 AWS_SECRET_REGION_NAME = os.getenv("AWS_SECRET_REGION_NAME")
 # Read RabbitMQ configuration from environment variables
@@ -25,6 +26,8 @@ VFIRST_USERNAME = os.getenv("VFIRST_USERNAME")
 VFIRST_PASSWORD = os.getenv("VFIRST_PASSWORD")
 CONNECT_EXPRESS_API_URL = os.getenv("CONNECT_EXPRESS_API_URL")
 CONNECT_EXPRESS_KEY = os.getenv("CONNECT_EXPRESS_KEY")
+SMART_PING_API_URL = os.getenv("SMART_PING_API_URL")
+SMART_PING_AUTH_KEY = os.getenv("SMART_PING_AUTH_KEY")
 # Read EMAIL Provider Details from environment variables
 SMTP_SERVER_HOST = os.getenv("SMTP_SERVER_HOST")
 SMTP_SERVER_PORT = os.getenv("SMTP_SERVER_PORT")
@@ -32,6 +35,8 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_EMAIL_FROM = os.getenv("SMTP_EMAIL_FROM")
 # Read MongoDB Details from environment variables
+WA_DEFAULT__SRC = os.getenv("WA_DEFAULT__SRC")
+WA_SENDER = os.getenv("WA_SENDER")
 mongodb = {
     'auth_enabled': eval(os.getenv('MONGO_AUTH_ENABLED')),
     'socket': os.getenv('MONGO_SOCKET'),

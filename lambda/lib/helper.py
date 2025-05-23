@@ -9,15 +9,8 @@ def string_character_check(str, pattern):
 
 def user_type_validate(data: dict) -> bool:
     allowed_user_type = {"c", "hb", "admin"}
-    action_by = data.get('ActionBy','')
+    action_by = data.get('actionby','')
     if action_by is not None and action_by.lower() not in allowed_user_type:
-        return False
-    return True
-
-def order_type_validate(data:dict) -> bool:
-    allowed_order_type = {"otc", "med"}
-    order_type = data.get('OrderType','')
-    if order_type is not None and order_type.lower() not in allowed_order_type:
         return False
     return True
 
@@ -29,7 +22,7 @@ def payment_type_validate(data:dict) -> bool:
         frozenset(["online", "wallet"]),
         frozenset(["cod", "wallet"])
     }
-    payment_type = data.get('PaymentType','')
+    payment_type = data.get('paymenttype','')
     if payment_type:
         normalized_input = frozenset(part.strip().lower() for part in payment_type.replace("+", " ").split())  
         if normalized_input not in allowed_payment_type_combos:
@@ -39,7 +32,7 @@ def payment_type_validate(data:dict) -> bool:
 def event_validate(data: dict) -> bool:
     allowed_event_type = {"order_placed", "order_confirmed", "order_hold",
                        "order_delivered", "order_cancelled", "order_edit", "order_shipped"}
-    event = data.get('Event','')
+    event = data.get('event','')
     if event is None:
         return False
     else:

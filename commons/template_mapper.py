@@ -1,6 +1,6 @@
 import base64
 from commons import config, NotificationLogger
-from .enums import PaymentTypeMap, OrderTypeMap, ActionByMap, map_enum_value
+from .enums import PaymentTypeMap, ActionByMap, map_enum_value
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -60,12 +60,25 @@ class TemplateValueMapper:
         mapped_parts = [event_name]
 
         if len(parts) > 2:
-            mapped_parts.append(map_enum_value(PaymentTypeMap, str(parts[2])))
+            mapped_parts.append(map_enum_value(PaymentTypeMap, str(parts[2])).lower())
         if len(parts) > 3:
-            mapped_parts.append(map_enum_value(ActionByMap, str(parts[3])))
-        if len(parts) > 4:
-            mapped_parts.append(map_enum_value(OrderTypeMap, str(parts[4])))
+            mapped_parts.append(map_enum_value(ActionByMap, str(parts[3])).lower())
 
         return "_".join(mapped_parts)
+    
+    @staticmethod
+    def formatted_payment_type(payment_type:str) -> str:
+
+        if payment_type is None or len(payment_type) == 0:
+            return payment_type  
+
+        return map_enum_value(PaymentTypeMap, str(payment_type)).lower()
+    
+    @staticmethod
+    def formatted_action_by(action_by:str) -> str:
+        if action_by is None or len(action_by) == 0:
+            return action_by  
+
+        return map_enum_value(ActionByMap, str(action_by)).lower()
         
 

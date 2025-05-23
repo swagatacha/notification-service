@@ -4,28 +4,33 @@ from pydantic import BaseModel
 
 
 class TemplateAddRequest(BaseModel):
-    Event: str
-    PaymentType: Optional[str]
-    OrderType: Optional[str]
-    ActionBy: Optional[str]
-    PrincipalTemplateId: Optional[str]
-    TemplateId: str
-    Header: str
-    IsSMS: str
-    SMSContent: str
-    CreatedBy: str
-    IsPush: str
-    PushTitle: Optional[str]
-    PushContent: Optional[str]
-    PushActionLink: Optional[str]
-    IsEmail: str
-    EmailSubject: Optional[str]
-    EmailContent: Optional[str]
-    EmailReceipient: Optional[str]
-    CreatedAt: str
+    event: str
+    paymentType: Optional[str]
+    actionBy: Optional[str]
+    principalTemplateId: Optional[str]
+    templateId: str
+    header: str
+    isSMS: str
+    smsContent: str
+    createdBy: str
+    isPush: str
+    pushTitle: Optional[str]
+    pushContent: Optional[str]
+    pushActionLink: Optional[str]
+    isEmail: str
+    emailSubject: Optional[str]
+    emailContent: Optional[str]
+    emailReceipient: Optional[str]
+    isWhatsapp:str
+    waTemplate:Optional[str]
+    waBody:Optional[str]
+    waHeader:Optional[str]
+    waButtons:Optional[str]
+    isActive: bool = True
+    createdAt: str
 
 class DalTemplateRequest(TemplateAddRequest):
-    EventId: str
+    eventId: str
 
 class TemplateAddBulkRequest(BaseModel):
     data: List[TemplateAddRequest]
@@ -35,19 +40,20 @@ class TemplateAddResponse:
         self.Event = Event
 
 class TemplateAddResponseBase(BaseModel):
-    EventId: str
-    Event: str
+    eventId: str
+    event: str
     status: str
     message: Optional[str] = None
 
 class SuccessTemplateAddResponse(TemplateAddResponseBase):
-    SMSContent: Optional[str] = None
-    PushTitle: Optional[str] = None
-    PushContent: Optional[str] = None
-    EmailSubject: Optional[str] = None
-    EmailContent: Optional[str] = None
+    smsContent: Optional[str] = None
+    pushTitle: Optional[str] = None
+    pushContent: Optional[str] = None
+    emailSubject: Optional[str] = None
+    emailContent: Optional[str] = None
+    waBody: Optional[str]
     
-class FailureTemplateAddResponse(BaseModel):
+class FailureTemplateAddResponse(TemplateAddResponseBase):
     pass
 
 class TemplateBulkResponse(BaseModel):
