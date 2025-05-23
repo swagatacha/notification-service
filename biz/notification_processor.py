@@ -1,14 +1,17 @@
 from datetime import datetime
 import json
+from biz.errors import NotFoundError
 from dal.errors import IdempotencyError
 from dal.sql.sql_dal import NoSQLDal, NotificationLogger
 from handlers.email_handler import Email
 from handlers.sms_handler import Sms
 from handlers.push_handler import Push
-from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse
-import traceback
+from handlers.whatsapp_handler import Whatsapp
+from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse, TemplateLists, TemplateDetails
+from schemas.v1 import TemplateModifyResponse, SuccessTemplateModifyResponse, FailureTemplateModifyResponse, TemplateModifyRequest
 from commons import config, TemplateValueMapper, RedisClient, EmailTemplateMapper
 from datetime import datetime, timedelta
+import re
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -24,8 +27,8 @@ class NotificationBiz:
         status = ''
 
         for val in request.data:
-            client_request_id_parts = [val.Event]
-            client_request_id_parts += [part for part in [val.PaymentType, val.OrderType, val.ActionBy] if part is not None]
+            client_request_id_parts = [val.event]
+            client_request_id_parts += [part for part in [val.paymentType, val.actionBy] if part is not None]
             client_request_id = "_".join(client_request_id_parts)
             try:
                 credit_response = self.__dal.template_add(val, client_request_id)
@@ -35,8 +38,8 @@ class NotificationBiz:
             except Exception as e:
                 logger.error(e)
                 failure.append(FailureTemplateAddResponse(
-                        EventId=TemplateValueMapper.formatted_event_id(client_request_id),
-                        Event=val.Event,
+                        eventId=TemplateValueMapper.formatted_event_id(client_request_id),
+                        event=val.event,
                         status="failure",
                         message=str(e)
                     ))
@@ -56,11 +59,85 @@ class NotificationBiz:
 
         return record
     
+    def template_add_edit(self, request:TemplateModifyRequest) -> TemplateModifyResponse:
+        try:
+            result= self.__dal.template_modify(request)
+            logger.info(f'modify result:{result}')
+            if result['matched_count'] == 0:
+                return FailureTemplateModifyResponse(
+                        eventId=request.eventId,
+                        event=request.event,
+                        status="error",
+                        message="Document not found"
+                    )
+            elif result['modified_count'] == 0:
+                return FailureTemplateModifyResponse(
+                        eventId=request.eventId,
+                        event=request.event,
+                        status="error",
+                        message="Document not modified"
+                )
+            else:
+                return SuccessTemplateModifyResponse(                    
+                    eventId=request.eventId,
+                    event=request.event,
+                    status="success",
+                    message="Template Updated Successfully")
+        except Exception as e:
+            logger.error(e)
+            raise FailureTemplateModifyResponse(
+                    eventId=request.eventId,
+                    event=request.event,
+                    status="failure",
+                    message=str(e)
+                )
+
+    
+    def get_templates(self, page_num: int, page_size: int) -> TemplateLists:
+        try:
+            records = self.__dal.get_templates(page_num, page_size)
+
+            for i in range(len(records['templates'])):
+                records['templates'][i]['paymentType'] = TemplateValueMapper.formatted_payment_type(records['templates'][i]['paymentType']) if records['templates'][i]['paymentType'] is not None else records['templates'][i]['paymentType']
+                records['templates'][i]['actionBy'] = TemplateValueMapper.formatted_action_by(records['templates'][i]['actionBy']) if records['templates'][i]['actionBy'] is not None else records['templates'][i]['actionBy']
+
+            return TemplateLists(
+                    templates=records['templates'],
+                    page=page_num,
+                    page_size=page_size,
+                    total_count = records['total_count']
+                )
+        except NotFoundError as e:
+            raise e
+        except Exception as e:
+            logger.error(f'failed to fetch template list:{e}')
+            raise e
+    
+    def template_details(self, eventId) -> TemplateDetails:
+        try:
+            template_data = self.__dal.get_template_details(eventId)
+            template_data.paymentType = TemplateValueMapper.formatted_payment_type(template_data.paymentType)
+            template_data.actionBy = TemplateValueMapper.formatted_action_by(template_data.actionBy)
+            return TemplateDetails(details=template_data)
+        except NotFoundError as e:
+            raise e
+        except Exception as e:
+            logger.error(f'failed to fetch template details:{e}')
+            raise e
+
     def template_mapping(self, msg, raw_data):
         value_mapper = TemplateValueMapper(msg)
         template_values = value_mapper.get_values()
         formatted_content = value_mapper.format_template(raw_data, template_values)
         return formatted_content
+    
+    def placeholder_mapping(self, msg, placeholders):
+        value_mapper = TemplateValueMapper(msg)
+        template_values = value_mapper.get_values()
+        if not placeholders:
+            return []
+        values_list = [template_values.get(key, "") for key in placeholders]
+        return values_list
     
     def generate_eventid_from_msg(self, message):
         message_key = message.get("message_key")
@@ -84,64 +161,161 @@ class NotificationBiz:
     def save_log(self, data: dict):
         self.__dal.save_log(data)
 
+    def get_provider_info(self):
+        provider_info = self.__dal.get_provider_info()
+
+        if not provider_info:
+            return config.ACTIVE_SMS_PROVIDER.lower()
+        for provider in provider_info:
+            if provider.get('isActive'):
+                provider_name = provider.get('name', '')
+                return provider_name.lower()
+        
+        return config.ACTIVE_SMS_PROVIDER.lower()
+
+    def call_sms_handler(self, active_provider, message, template_data):
+        sms_header = template_data.header
+        sms_content = self.template_mapping(message, template_data.smsContent)
+        mobileno = message.get("mobileno")
+        data={
+            "mobileNo": mobileno,
+            "event": message.get("message_key"),
+            "orderId":message.get("orderid",''),
+            "channel":"sms",
+            "service_provider": active_provider,
+            "createdAt": datetime.utcnow()
+        }
+        try:
+            if active_provider == 'infobip':
+                response, status_code = Sms(sms_header).send_sms_infobip(sms_content, mobileno,
+                                                                template_data.principalTemplateId, template_data.templateId)
+                if status_code == 200 and 'messages' in response:
+                    data['message_id'] = response['messages']['messageId']
+                    data['http_status'] = status_code
+                    data['groupId'] = response['messages']['status']['groupId']
+                    data['status'] = response['messages']['status']['groupName']
+                elif 'requestError' in response:
+                    data['message_id'] = response['requestError']['serviceException']['messageId']
+                    data['http_status'] = status_code
+                    data['status'] = response['requestError']['serviceException']['text']
+            elif active_provider == 'textnation':
+                response, status_code  = Sms(sms_header).send_sms_connectexpress(sms_content, mobileno)
+                if status_code == 200 and 'data' in response:
+                    data['message_id'] = response['data'][0]['id']
+                    data['http_status'] = status_code
+                    data['groupId'] = response['data']['group_id']
+                    data['status'] = response['data'][0]['status]']
+                else:
+                    data['status'] = response['status']
+            else:
+                response, status_code  = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
+
+            self.save_log(data)
+        except Exception as e:
+            data['status'] = str(e)
+            self.save_log(data)
+
+    def call_push_handler(self, message, template_data):
+        data={
+                "mobileNo": message.get("mobileno"),
+                "event": message.get("message_key"),
+                "orderId":message.get("orderid",''),
+                "channel":"push",
+                "createdAt": datetime.utcnow()
+            }
+        try:
+            push_content = self.template_mapping(message, template_data.pushContent)
+
+            notification_details = {
+                "token": message.get("GCMKey", ""),
+                "PushTitle": template_data.pushTitle,
+                "PushContent": push_content,
+                "ActionLink": template_data.pushActionLink
+            }
+            push_resp = Push().send_push(notification_details)
+
+            data['http_status'] = push_resp['status_code']
+            data['status'] = push_resp['response']
+            self.save_log(data)
+
+        except Exception as e:
+            data['status'] = str(e)
+            self.save_log(data)
+
+    def call_email_handler(self, message, template_data):
+        data={
+                "mobileNo": message.get("mobileno"),
+                "emailId": message.get("emailid", ""),
+                "event": message.get("message_key"),
+                "orderId":message.get("orderid",''),
+                "channel":"email",
+                "createdAt": datetime.utcnow()
+            }
+        try:          
+            email_content = self.template_mapping(message, template_data.emailContent)
+            email_receipient = template_data.emailReceipient if template_data.emailReceipient is not None else message.get("emailid", "")
+
+            email_resp = Email().mail(EmailTemplateMapper().buildhtml(email_content), template_data.emailSubject, email_receipient)
+            data['status'] = email_resp
+            self.save_log(data)
+
+        except Exception as e:
+            data['status'] = str(e)
+            self.save_log(data)
+
+    def call_wa_handler(self, active_provider, message, template_data):
+        mobileno = message.get("mobileno")
+        data={
+            "mobileNo": mobileno,
+            "event": message.get("message_key"),
+            "orderId":message.get("orderid",''),
+            "channel":"whatsapp",
+            "service_provider": active_provider,
+            "createdAt": datetime.utcnow()
+        }
+
+        try:
+            placeholders = re.findall(r"{#(.*?)#}", template_data.waBody)
+            body_content = self.placeholder_mapping(message, placeholders)
+            template_name = template_data.waTemplate
+            header_content = json.loads(template_data.waHeader)
+            buttons_content = json.loads(template_data.waButtons)
+
+            if active_provider == 'infobip':
+                wa_resp = Whatsapp().send_wa_infobip(template_name, header_content, body_content, buttons_content, mobileno)
+            elif active_provider == 'textnation':
+                wa_resp = Whatsapp().send_wa_connectexpress(template_name, header_content, body_content, mobileno)
+            self.save_log(data)
+        except Exception as e:
+            data['status'] = str(e)
+            self.save_log(data)
+
     def send_notification(self, message:dict):
         try:
-            template_data = self.__dal.get_event_template(self.generate_eventid_from_msg(message))
+            template_data = self.__dal.get_template_details(self.generate_eventid_from_msg(message))
 
-            mobileno = message.get("mobileno")
-            is_sms = template_data.IsSMS
-            is_push = template_data.IsPush
-            is_email = template_data.IsEmail
+            is_sms = template_data.isSMS
+            is_push = template_data.isPush
+            is_email = template_data.isEmail
+            is_wa = template_data.isWhatsapp
+            active_provider = self.get_provider_info()
 
-            resp = {}
+            if str(is_sms).upper() == 'Y':
+                self.call_sms_handler(active_provider, message, template_data)
+            if str(is_push).upper() == 'Y':
+                self.call_push_handler(message, template_data)
+            if str(is_email).upper() == 'Y':
+                self.call_email_handler(message, template_data)
+            if str(is_wa).upper() == 'Y':
+                self.call_wa_handler(active_provider, message, template_data)
 
-            if is_sms == 'Y':
-                active_provider = config.ACTIVE_SMS_PROVIDER
-                sms_header = template_data.Header
-                sms_content = self.template_mapping(message, template_data.SMSContent)
-
-                if active_provider == 'INFOBIP':
-                    resp['sms'] = Sms(sms_header).send_sms_infobip(sms_content, mobileno,
-                                                            template_data.PrincipalTemplateId, template_data.TemplateId)
-                elif active_provider == 'TEXTNATION':
-                    resp['sms'] = Sms(sms_header).send_sms_connectexpress(sms_content, mobileno)
-                else:
-                    resp['sms'] = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
-
-            if is_push == 'Y':
-                push_content = self.template_mapping(message, template_data.PushContent)
-
-                notification_details = {
-                    "token": message.get("GCMKey", ""),
-                    "PushTitle": template_data.PushTitle,
-                    "PushContent": push_content,
-                    "ActionLink": template_data.PushActionLink
-                }
-                resp['push'] = Push().send_push(notification_details)
-
-            if is_email == 'Y':
-                email_content = self.template_mapping(message, template_data.EmailContent)
-                email_receipient = template_data.EmailReceipient if template_data.EmailReceipient is not None else message.get("emailid", "")
-
-                resp['email'] = Email().mail(EmailTemplateMapper().buildhtml(email_content), template_data.EmailSubject, email_receipient)
-
-            if resp:
-                data={
-                    "mobileNo": mobileno,
-                    "event": message.get("message_key"),
-                    "orderId":message.get("orderid",''),
-                    "response": json.dumps(resp),
-                    "createdAt": datetime.utcnow()
-                }
-                self.save_log(data)
-            return resp
         except Exception as e:
-            logger.error(f"failed in send_notification:{traceback.format_exc()}")
+            logger.error(f"failed in send_notification:{e}")
             data={
                     "mobileNo": message.get("mobileno"),
                     "event": message.get("message_key"),
                     "orderId":message.get("orderid",''),
-                    "response": str(e),
+                    "status": str(e),
                     "createdAt": datetime.utcnow()
                 }
             self.save_log(data)
@@ -168,8 +342,11 @@ def is_same_day_multi_shipped(redis_client, message):
     return False
 
 def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
-    logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages for age > 3 hours.")
+    logger.info(f"Fallback triggered for order {order_id}. Checking buffered messages older than 3 hours.")
     now = datetime.utcnow()
+    status_hash_key = "notification_status_all"
+    biz = NotificationBiz()
+    statuses = list(config.STATUS_PRIORITY.keys())
 
     for status, priority in sorted(config.STATUS_PRIORITY.items(), key=lambda x: x[1]):
         field = f"{order_id}:{status}"
@@ -179,23 +356,44 @@ def buffer_queue_fallback(redis_client, order_id, pending_hash_key):
 
         try:
             buffered_msg = json.loads(buffered_msg_raw)
-            timestamp_str = buffered_msg.get("received_at")
-            if not timestamp_str:
-                logger.warning(f"Missing received_at in buffered message for {field}, skipping.")
+            received_at = buffered_msg.get("received_at")
+            message = buffered_msg.get("message")
+
+            if not received_at or not message:
+                logger.warning(f"Incomplete buffered message for {field}, skipping.")
+                redis_client.hdel(pending_hash_key, field)
                 continue
 
-            msg_time = datetime.utcfromtimestamp(timestamp_str)
+            msg_time = datetime.utcfromtimestamp(received_at)
             age = now - msg_time
-            logger.info(f'age is {age}')
 
-            if age >= timedelta(hours=3):
-                logger.info(f"Processing stale buffered message {status} for order {order_id} (age: {age}).")
-                redis_client.hdel(pending_hash_key, field)
-                biz = NotificationBiz()
-                biz.send_notification(buffered_msg.get('message'))
-                redis_client.hset("notification_status_all", order_id, status)
-            else:
-                logger.info(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+            if status in config.TERMINATION_STATES:
+                logger.info(f"Terminal state {status} found for order {order_id}. Processing immediately.")
+                biz.send_notification(message)
+                pipe = redis_client.pipeline()
+                pipe.hdel(pending_hash_key, field)
+                pipe.hset(status_hash_key, order_id, status)
+                pipe.execute()
+                
+                # Clean up all buffered statuses for this order
+                for s in statuses:
+                    redis_client.hdel(pending_hash_key, f"{order_id}:{s}")
+                return  # Stop processing any further statuses
+
+            if age < timedelta(hours=3):
+                logger.warning(f"Buffered message {status} for order {order_id} is too recent (age: {age}). Skipping.")
+                continue
+
+            if status == "order_shipped" and is_same_day_multi_shipped(redis_client, message):
+                logger.info(f"Shipment notification already sent today for order {order_id}. Skipping.")
+                continue
+
+            logger.info(f"Processing stale buffered message {status} for order {order_id} (age: {age}).")
+            biz.send_notification(message)
+            pipe = redis_client.pipeline()
+            pipe.hdel(pending_hash_key, field)
+            pipe.hset(status_hash_key, order_id, status)
+            pipe.execute()
 
         except Exception as e:
             logger.error(f"Error while processing buffered message for {field}: {e}. Deleting to avoid blockage.")
@@ -297,6 +495,6 @@ def process_message(message):
         else:
             NotificationBiz().send_notification(message)
     except Exception as e:
-        logger.error(f"failed to process message: {traceback.format_exc()}")
+        logger.error(f"failed to process message: {e}")
         raise e
 

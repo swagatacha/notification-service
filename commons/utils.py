@@ -14,6 +14,7 @@ def retry(max_retries=3, delay=2, backoff=2):
             while retries < max_retries:
                 logger.info(f"retries:{retries} and max_retries:{max_retries}")
                 try:
+                    logger.info(f"[{func.__name__}] Attempt {retries + 1} of {max_retries}")
                     return func(*args, **kwargs)
                 except Exception as e:
                     retries += 1

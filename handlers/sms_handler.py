@@ -44,6 +44,7 @@ class Sms:
             }
 
             payload = json.dumps(jsonData)
+
             headers = {
                 'Authorization': f'App {config.INFOBIP_AUTH_KEY}',
                 'Content-Type': 'application/json',
@@ -52,17 +53,13 @@ class Sms:
             conn.request("POST", "/sms/2/text/advanced", payload, headers)
             res = conn.getresponse()
             logger.info(f'sms api response code:{res.status}')
-
-            if res.status != 200:
-                logger.error(f"Infobip SMS send failed: {res.status} {res.reason}")
-                return f"Infobip SMS send failed: {res.status} {res.reason}"
             
             data = res.read()
 
-            return data.decode("utf-8")
+            return data.decode("utf-8"), res.status
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e
 
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_vfirst(self, msg, to):
@@ -74,7 +71,7 @@ class Sms:
                 msg = "SMS Content is not valid"
                 return msg
     
-            apiUrl = config.VFIRST_API_URL
+            apiUrl = f'{config.VFIRST_API_URL}/psms/servlet/psms.Eservice2'
             userName = config.VFIRST_USERNAME
             password = config.VFIRST_PASSWORD
             fromName = self.sms_header
@@ -90,10 +87,10 @@ class Sms:
                     data = {'data' : data, 'action' : 'send'}, 
                     headers = {'Content-Type' : 'application/x-www-form-urlencoded'}, ssl=True)
             
-            return resp_text
+            return resp_text, resp.status_code
         except Exception as e:
             logger.error(f"Exception in send_sms_vfirst: {str(e)}")
-            return str(e)
+            raise e
     
     @retry(max_retries=3, delay=1, backoff=2)
     def send_sms_connectexpress(self, msg, to):
@@ -105,13 +102,13 @@ class Sms:
                 msg = "SMS Content is not valid"
                 return msg
             
-            apiUrl  = config.CONNECT_EXPRESS_API_URL
+            apiUrl  = f'{config.CONNECT_EXPRESS_API_URL}/api/v3/index.php'
             apiKey = config.CONNECT_EXPRESS_KEY
 
             data = {'to':to, 'message':urllib.parse.quote_plus(msg), 'method':'sms', 'api_key':apiKey, 'sender':self.sms_header, 'format':'json'}
-            resp_text, resp = restclient.post(url=apiUrl,data=data,headers={'Content-Type': 'application/jsonp'}, ssl=True)
+            resp_text, resp = restclient.post(url=apiUrl, data=data, headers={'Content-Type': 'application/jsonp'}, ssl=True)
 
-            return resp_text
+            return resp_text, resp.status_code
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
-            return str(e)
+            raise e

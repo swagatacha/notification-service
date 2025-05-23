@@ -20,10 +20,6 @@ class ActionByMap(Enum):
         self.key = key
         self.label = label
 
-class OrderTypeMap(Enum):
-    O = ("O", "Otc")
-    M = ("M", "Med")
-
     def __init__(self, key, label):
         self.key = key
         self.label = label

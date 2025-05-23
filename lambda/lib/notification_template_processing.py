@@ -2,23 +2,23 @@ import csv
 import json
 import requests
 import datetime
-from lib.helper import string_character_check, event_validate, user_type_validate, order_type_validate, payment_type_validate
+from lib.helper import string_character_check, event_validate, user_type_validate, payment_type_validate
 from schemas.template_upload import TemplateAddRequest, TemplateAddApiRequest, ParameterEncoder
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from enum import Enum
 import traceback
 
-HOST = "0.0.0.0"
+HOST = "127.0.0.1"
 PORT = "8000"
 num = 5
 
 DEFAULT_TIMEOUT = 1
 
-mandatory_columns = ["Event", "PaymentType", "OrderType", "ActionBy", "PrincipalTemplateId", "TemplateId", 
-                     "Header", "IsSMS", "SMSContent", "CreatedBy", "IsPush", "PushTitle",
-                     "PushContent", "PushActionLink", "IsEmail", "EmailSubject", 
-                     "EmailContent", "EmailReceipient"]
+mandatory_columns = ["event", "paymenttype", "actionby", "principaltemplateid", "templateid", 
+                     "header", "issms", "smscontent", "createdby", "ispush", "pushtitle",
+                     "pushcontent", "pushactionlink", "isemail", "emailsubject", 
+                     "emailcontent", "emailreceipient", "iswhatsapp", "watemplate", "wabody", "waheader", "wabuttons"]
 
 class PaymentTypeMap(Enum):
     cod = '1'
@@ -34,9 +34,6 @@ class ActionByMap(Enum):
     admin = "A"
     hb = "B"
 
-class OrderTypeMap(Enum):
-    otc = "O"
-    med = "M"
 
 class TimeoutHTTPAdapter(HTTPAdapter):
     def __init__(self, *args, **kwargs):
@@ -69,30 +66,24 @@ def is_valid_input(column_value_mapping: dict):
     if not event_validate(column_value_mapping):
         return False
 
-    if not order_type_validate(column_value_mapping):
-        return False
-
     if not payment_type_validate(column_value_mapping):
         return False
 
-    if column_value_mapping['CreatedBy'] is None or not string_character_check(
-            column_value_mapping['CreatedBy'],
+    if column_value_mapping['createdby'] is None or not string_character_check(
+            column_value_mapping['createdby'],
             '[A-Za-z0-9]+$'):
         return False
 
-    if column_value_mapping['IsSMS'] is None or not string_character_check(
-            column_value_mapping['IsSMS'],
-            '[A-Za-z]+$'):
+    if column_value_mapping['issms'] not in ('Y', 'N'):
         return False
 
-    if column_value_mapping['IsPush'] is None or not string_character_check(
-            column_value_mapping['IsPush'],
-            '[A-Za-z]+$'):
+    if column_value_mapping['ispush'] not in ('Y', 'N'):
         return False
 
-    if column_value_mapping['IsEmail'] is None or not string_character_check(
-            column_value_mapping['IsEmail'],
-            '[A-Za-z]+$'):
+    if column_value_mapping['isemail'] not in ('Y', 'N'):
+        return False
+    
+    if column_value_mapping['iswhatsapp'] not in ('Y', 'N'):
         return False
 
     return True
@@ -121,25 +112,20 @@ def parse_to_template_add_request(data: list, header: list):
             if len(value) == 0:
                 pass
             else:
-                if column == "PaymentType":
+                if column == "paymenttype":
                     if isinstance(value, str):
                         key = str(value).lower().replace("+", "").replace(" ", "") if value is not None else None
                         column_value_mapping[column] = PaymentTypeMap[key].value if str(value) is not None else str(value)
                     else:
                         column_value_mapping[column] = str(value)
-                elif column == "OrderType":
-                    if isinstance(value, str):
-                        column_value_mapping[column] = OrderTypeMap[str(value).lower()].value if str(value) is not None else str(value)
-                    else:
-                        column_value_mapping[column] = str(value) 
-                elif column == "ActionBy":
+                elif column == "actionby":
                     if isinstance(value, str):
                         column_value_mapping[column] = ActionByMap[str(value).lower()].value if str(value) is not None else str(value)
                     else:
                         column_value_mapping[column] = str(value)
                 else:
                     column_value_mapping[column] = str(value)
-                column_value_mapping["CreatedAt"] = current_time
+                column_value_mapping["createdat"] = current_time
 
         return TemplateAddRequest(column_value_mapping)
     except Exception as e:
@@ -160,7 +146,7 @@ def read_csv_file(path_name: str):
     with open(path_name , mode='r') as file:
         csv_file = csv.reader(file)
         header = next(csv_file)
-        header = [column for column in header]
+        header = [column.lower() for column in header]
         is_valid_header(header)
 
         for row in csv_file:
@@ -182,6 +168,7 @@ def process_request(path_name: str):
 
 def api_call(batch_requests: list):
     parameter = TemplateAddApiRequest(batch_requests)
+
     try:
         response = http.post("http://" + HOST + ":" + PORT + "/api/v1/batch/template/add",
                              json=json.loads(json.dumps(parameter, cls=ParameterEncoder))
@@ -193,6 +180,7 @@ def api_call(batch_requests: list):
 
 if __name__ == "__main__":
     try:
-        process_request('data/template_v1.csv')
+        filepath = 'data/template_v1.csv'
+        process_request(filepath)
     except Exception as e:
         print(e)
