@@ -65,7 +65,7 @@ class Whatsapp:
             
             data = res.read()
 
-            return data.decode("utf-8"), res.status
+            return json.loads(data.decode("utf-8")), res.status
         except Exception as e:
             logger.error(f"Exception in send_wa_infobip: {str(e)}")
             raise e
@@ -106,7 +106,7 @@ class Whatsapp:
             logger.info(f'wa api response code:{res.status}')
 
             data = res.read()
-            return data.decode("utf-8"), res.status
+            return json.loads(data.decode("utf-8")), res.status
         except Exception as e:
             logger.error(f"Exception in send_wa_connectexpress: {str(e)} for mobileno: {mobileno}")
             raise e
@@ -190,7 +190,7 @@ class Whatsapp:
             logger.info(f'wa api response code:{res.status}')
 
             data = res.read()
-            return data.decode("utf-8"), res.status
+            return json.loads(data.decode("utf-8")), res.status
         except Exception as e:
             logger.error(f"Exception in send_wa_connectexpress: {str(e)} for mobileno: {mobileno}")
             raise e
