@@ -56,7 +56,7 @@ class Sms:
             
             data = res.read()
 
-            return data.decode("utf-8"), res.status
+            return json.loads(data.decode("utf-8")), res.status
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
             raise e

@@ -190,10 +190,10 @@ class NotificationBiz:
                 response, status_code = Sms(sms_header).send_sms_infobip(sms_content, mobileno,
                                                                 template_data.principalTemplateId, template_data.templateId)
                 if status_code == 200 and 'messages' in response:
-                    data['message_id'] = response['messages']['messageId']
+                    data['message_id'] = response['messages'][0]['messageId']
                     data['http_status'] = status_code
-                    data['groupId'] = response['messages']['status']['groupId']
-                    data['status'] = response['messages']['status']['groupName']
+                    data['groupId'] = response['messages'][0]['status']['groupId']
+                    data['status'] = response['messages'][0]['status']['groupName']
                 elif 'requestError' in response:
                     data['message_id'] = response['requestError']['serviceException']['messageId']
                     data['http_status'] = status_code
@@ -282,9 +282,25 @@ class NotificationBiz:
             buttons_content = json.loads(template_data.waButtons)
 
             if active_provider == 'infobip':
-                wa_resp = Whatsapp().send_wa_infobip(template_name, header_content, body_content, buttons_content, mobileno)
+                wa_resp, status_code = Whatsapp().send_wa_infobip(template_name, header_content, body_content, buttons_content, mobileno)
+                if status_code == 200 and 'messages' in wa_resp:
+                    data['message_id'] = wa_resp['messages'][0]['messageId']
+                    data['http_status'] = status_code
+                    data['groupId'] = wa_resp['messages'][0]['status']['groupId']
+                    data['status'] = wa_resp['messages'][0]['status']['groupName']
+                elif 'requestError' in wa_resp:
+                    data['message_id'] = wa_resp['requestError']['serviceException']['messageId']
+                    data['http_status'] = status_code
+                    data['status'] = wa_resp['requestError']['serviceException']['text']
             elif active_provider == 'textnation':
-                wa_resp = Whatsapp().send_wa_connectexpress(template_name, header_content, body_content, mobileno)
+                wa_resp, status_code = Whatsapp().send_wa_connectexpress(template_name, header_content, body_content, mobileno)
+                if status_code == 200 :
+                    data['message_id'] = wa_resp['messageId']
+                    data['http_status'] = status_code
+                    data['status'] = wa_resp['status']
+                else:
+                    data['http_status'] = status_code
+                    data['status'] = wa_resp['status']
             self.save_log(data)
         except Exception as e:
             data['status'] = str(e)
