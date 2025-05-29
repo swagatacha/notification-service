@@ -11,7 +11,9 @@ queues = [
     "order_shipped",
     "order_delivered",
     "order_edit",
-    "order_cancelled"
+    "order_cancelled",
+    "product_request",
+    "reorder"
 ]
 rabbitmq_conn = RabbitMQConnectionPool(pool_size=10) if config.RABBITMQ_CONNECTION_POOL else RabbitMQConnection()
 

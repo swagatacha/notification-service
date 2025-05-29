@@ -38,7 +38,7 @@ class Whatsapp:
                     }
             
             json_template = jsonData["messages"][0]["content"]["templateData"]
-            if body_content and isinstance(body_content, list) and len(body_content) >0:
+            if body_content and isinstance(body_content, list):
                 json_template["body"] = {"placeholders": body_content}
 
             if header_content and isinstance(header_content, dict):
@@ -49,7 +49,28 @@ class Whatsapp:
                 json_template["header"] = header
 
             if buttons_content and isinstance(buttons_content, list) and len(buttons_content) > 0:
-                json_template["buttons"] = buttons_content
+                json_template["components"] = []
+                sub_components = {"type":"BUTTONS", "buttons":[]}
+                for i, button in enumerate(buttons_content):
+                    tmp_data = {
+                        "type": button["type"],
+                        "subType": button["type"],
+                        "index": i,
+                        "parameters": []
+                    }
+                    if button["type"] == "URL":
+                        tmp_data["parameters"].append({
+                            "type": "TEXT",
+                            "text": button["url"]
+                        })
+                    elif button["type"] == "QUICK_REPLY":
+                        tmp_data["parameters"].append({
+                            "type": "TEXT",
+                            "text": button["text"]
+                        })
+                        
+                    sub_components["buttons"].append(tmp_data)
+                json_template["components"].append(sub_components)
 
             payload = json.dumps(jsonData)
 
@@ -136,7 +157,23 @@ class Whatsapp:
                         }
 
             json_template = jsonData["template"]["components"]
-            if body_content and isinstance(body_content, list) and len(body_content) >0:
+
+            if header_content and isinstance(header_content, dict):
+                key = header_content["format"].lower()
+                header = {
+                            "type": "header",
+                            "parameters": [
+                                {
+                                    "type": header_content["format"].lower(),
+                                    key: {
+                                        "link": header_content["link"]
+                                    }
+                                }
+                            ]
+                        }
+                json_template.append(header)
+            
+            if body_content and isinstance(body_content, list):
                 body = {
                             "type": "body",
                             "parameters": []
@@ -148,34 +185,20 @@ class Whatsapp:
                                 })
                 json_template.append(body)
 
-            if header_content and isinstance(header_content, dict):
-                header = {
-                            "type": "header",
-                            "parameters": [
-                                {
-                                    "type": header_content["format"].lower(),
-                                    "image": {
-                                        "link": header_content["link"]
-                                    }
-                                }
-                            ]
-                        }
-                json_template.append(header)
-
             if buttons_content and isinstance(buttons_content, list) and len(buttons_content) > 0:
-                for btn in buttons_content:
+                for i, button in enumerate(buttons_content):
                     buttons= {
                                     "type": "button",
-                                    "sub_type": "url",
-                                    "index": "1",
+                                    "sub_type": button["type"].lower(),
+                                    "index": i,
                                     "parameters": [
                                     {
                                         "type": "text",
-                                        "text": "part-of-the-link"
+                                        "text": button["url"]
                                     }
                                     ]
                                 }
-                json_template.append(buttons_content)
+                    json_template.append(buttons)
             
             payload = json.dumps(jsonData)
 

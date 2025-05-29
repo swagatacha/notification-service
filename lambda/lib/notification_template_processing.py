@@ -61,29 +61,37 @@ http.mount("http://", TimeoutHTTPAdapter(max_retries=retries))
 
 def is_valid_input(column_value_mapping: dict):
     if not user_type_validate(column_value_mapping):
+        print("user_type_validate fail")
         return False
 
     if not event_validate(column_value_mapping):
+        print("event_validate fail")
         return False
 
     if not payment_type_validate(column_value_mapping):
+        print("payment_type_validate fail")
         return False
 
     if column_value_mapping['createdby'] is None or not string_character_check(
             column_value_mapping['createdby'],
             '[A-Za-z0-9]+$'):
+        print("createdby fail")
         return False
 
     if column_value_mapping['issms'] not in ('Y', 'N'):
+        print("issms fail")
         return False
 
     if column_value_mapping['ispush'] not in ('Y', 'N'):
+        print("ispush fail")
         return False
 
     if column_value_mapping['isemail'] not in ('Y', 'N'):
+        print("isemail fail")
         return False
     
     if column_value_mapping['iswhatsapp'] not in ('Y', 'N'):
+        print("iswhatsapp fail")
         return False
 
     return True
