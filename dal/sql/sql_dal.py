@@ -3,7 +3,7 @@ from dal.template_dal import TemplateDal
 from commons import Mongo, NotificationLogger, TemplateValueMapper
 from biz.errors import NotFoundError
 from dal.errors import IdempotencyError
-from schemas.v1 import DalTemplateRequest, SuccessTemplateAddResponse, SuccessTemplateResponse, DalTemplateModifyRequest
+from schemas.v1 import DalTemplateRequest, SuccessTemplateAddResponse, SuccessTemplateResponse, DalTemplateModifyRequest, DalProviderDetail
 from datetime import datetime, timedelta
 
 log_clt = NotificationLogger()
@@ -13,12 +13,34 @@ class NoSQLDal(TemplateDal):
     def __init__(self):
         super(NoSQLDal, self).__init__()
         self.__datastore = Mongo()
+
+    def service_provider_add(self, request : DalProviderDetail):
+        dbname = self.__datastore.db()
+        try:
+            idempotency_items = list(dbname.provider_info.find({"name":request.name}))
+            if isinstance(idempotency_items, list) and len(idempotency_items) > 0:
+                raise IdempotencyError(idempotency_items)
+            
+            dbname.provider_info.insert_one(request.dict())
+
+            all_providers = list(dbname.provider_info.find({}))
+
+            return all_providers
+        except Exception as e:
+            raise e
     
     def get_provider_info(self):
         dbname = self.__datastore.db()
         try:
-            items = list(dbname.provider_info.find({"_id":0}))
+            items = list(dbname.provider_info.find({},{"_id":0}))
             return items
+        except Exception as e:
+            raise e
+    def set_provider_active(self, provider_id):
+        dbname = self.__datastore.db()
+        try:
+            result = dbname.provider_info.update_one({"_id": provider_id}, {"$set": {"isActive": True}})
+            return result.modified_count
         except Exception as e:
             raise e
 
@@ -137,4 +159,29 @@ class NoSQLDal(TemplateDal):
             logger.error(e)
             raise e
         
+    def get_log(self, timestamp:str):
+        dbname = self.__datastore.db()
+        try:
+            resp = list(dbname.notification_log.find({"createdAt": {"$gte": timestamp}}))
+            return resp
+        except Exception as e:
+            logger.error(e)
+            raise e
+        
+    def update_sms_log(self, message_id, status, timestamp):
+        try:
+            dbname = self.__datastore.db()
+            result = dbname.notification_log.update_one(
+                {"messageId": message_id},
+                {
+                    "$set": {
+                        "finalStatus": status,
+                        "deliveredAt": timestamp,
+                        "updatedAt": datetime.utcnow()
+                    }
+                }
+            )
+            return result.modified_count
+        except Exception as e:
+            raise e
     

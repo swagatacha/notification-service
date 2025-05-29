@@ -112,3 +112,7 @@ class Sms:
         except Exception as e:
             logger.error(f"Exception in send_sms_infobip: {str(e)}")
             raise e
+        
+    @retry(max_retries=3, delay=1, backoff=2)
+    def send_sms_smartping(self, msg, to):
+        pass

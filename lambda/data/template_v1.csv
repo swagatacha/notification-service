@@ -54,3 +54,6 @@ View updated order: {#url#}",10001,N,,,,N,,,,N,,,,
 order_shipped,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 
 Your orders containing {#products#} items have been shipped. Track your orders in the SastaSundar app.",10001,N,,,,N,,,,N,,,,
+product_request,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+
+Your orders containing {#products#} items have been shipped. Track your orders in the SastaSundar app.",10001,N,,,,N,,,,N,,,,

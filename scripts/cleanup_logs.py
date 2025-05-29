@@ -1,4 +1,4 @@
-from dal.sql.sql_dal import NoSQLDal, logger
+from dal.sql.sql_dal import NoSQLDal
 
 class ClenaupLogs:
     def __init__(self):

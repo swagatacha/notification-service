@@ -20,7 +20,8 @@ class TemplateValueMapper:
             "walletrefund": self.message.get("walletrefund", "0"),
             "codamount": self.message.get("codamount", "0"),
             "reason": self.message.get("reason", ""),
-            "url": self.generate_url(self.message.get("orderid", "")),
+            "trackurl": self.generate_track_url(self.message.get("orderid", "")),
+            "producturl": self.generate_product_url(),
             "discountpercent": self.message.get("discountpercent", ""),
             "discountamount": self.message.get("discountamount", ""),
             "couponcode": self.message.get("couponcode", ""),
@@ -43,12 +44,15 @@ class TemplateValueMapper:
             template = template.replace(f"{{#{key}#}}", str(val))
         return template
     
-    def generate_url(self, orderid):
+    def generate_track_url(self, orderid):
         if orderid is None:
             return None
         track_orderid = base64.b64encode(str(orderid).encode('utf-8')).strip()
         track_orderid = track_orderid.decode('utf-8')
         return f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
+    
+    def generate_product_url(self):
+        return config.HOME_PAGE_URL
     
     @staticmethod
     def formatted_event_id(client_request_id:str) -> str:

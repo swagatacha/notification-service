@@ -7,8 +7,8 @@ from handlers.email_handler import Email
 from handlers.sms_handler import Sms
 from handlers.push_handler import Push
 from handlers.whatsapp_handler import Whatsapp
-from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse, TemplateLists, TemplateDetails
-from schemas.v1 import TemplateModifyResponse, SuccessTemplateModifyResponse, FailureTemplateModifyResponse, TemplateModifyRequest
+from schemas.v1 import TemplateAddBulkRequest, TemplateBulkResponse, FailureTemplateAddResponse, TemplateLists, TemplateDetails, DalProviderDetail
+from schemas.v1 import TemplateModifyResponse, SuccessTemplateModifyResponse, FailureTemplateModifyResponse, TemplateModifyRequest, ProviderDetail, ServiceProviders
 from commons import config, TemplateValueMapper, RedisClient, EmailTemplateMapper
 from datetime import datetime, timedelta
 import re
@@ -19,111 +19,6 @@ logger = log_clt.get_logger(__name__)
 class NotificationBiz:
     def __init__(self):
         self.__dal = NoSQLDal()
-
-    def template_bulk_add(self, request: TemplateAddBulkRequest) -> TemplateBulkResponse:
-        success = []
-        failure = []
-        idempotent = []
-        status = ''
-
-        for val in request.data:
-            client_request_id_parts = [val.event]
-            client_request_id_parts += [part for part in [val.paymentType, val.actionBy] if part is not None]
-            client_request_id = "_".join(client_request_id_parts)
-            try:
-                credit_response = self.__dal.template_add(val, client_request_id)
-                success.append(credit_response)
-            except IdempotencyError as idempotent_error:
-                idempotent.append(TemplateValueMapper.formatted_event_id(client_request_id))
-            except Exception as e:
-                logger.error(e)
-                failure.append(FailureTemplateAddResponse(
-                        eventId=TemplateValueMapper.formatted_event_id(client_request_id),
-                        event=val.event,
-                        status="failure",
-                        message=str(e)
-                    ))
-
-        if len(failure) == 0:
-            status = "success"
-        elif len(failure) == len(request.data):
-            status = "failed"
-        else:
-            status = "partial"
-
-        record = TemplateBulkResponse(status, {
-            "success": success,
-            "failed": failure,
-            "idempotent": idempotent
-        }, message="")
-
-        return record
-    
-    def template_add_edit(self, request:TemplateModifyRequest) -> TemplateModifyResponse:
-        try:
-            result= self.__dal.template_modify(request)
-            logger.info(f'modify result:{result}')
-            if result['matched_count'] == 0:
-                return FailureTemplateModifyResponse(
-                        eventId=request.eventId,
-                        event=request.event,
-                        status="error",
-                        message="Document not found"
-                    )
-            elif result['modified_count'] == 0:
-                return FailureTemplateModifyResponse(
-                        eventId=request.eventId,
-                        event=request.event,
-                        status="error",
-                        message="Document not modified"
-                )
-            else:
-                return SuccessTemplateModifyResponse(                    
-                    eventId=request.eventId,
-                    event=request.event,
-                    status="success",
-                    message="Template Updated Successfully")
-        except Exception as e:
-            logger.error(e)
-            raise FailureTemplateModifyResponse(
-                    eventId=request.eventId,
-                    event=request.event,
-                    status="failure",
-                    message=str(e)
-                )
-
-    
-    def get_templates(self, page_num: int, page_size: int) -> TemplateLists:
-        try:
-            records = self.__dal.get_templates(page_num, page_size)
-
-            for i in range(len(records['templates'])):
-                records['templates'][i]['paymentType'] = TemplateValueMapper.formatted_payment_type(records['templates'][i]['paymentType']) if records['templates'][i]['paymentType'] is not None else records['templates'][i]['paymentType']
-                records['templates'][i]['actionBy'] = TemplateValueMapper.formatted_action_by(records['templates'][i]['actionBy']) if records['templates'][i]['actionBy'] is not None else records['templates'][i]['actionBy']
-
-            return TemplateLists(
-                    templates=records['templates'],
-                    page=page_num,
-                    page_size=page_size,
-                    total_count = records['total_count']
-                )
-        except NotFoundError as e:
-            raise e
-        except Exception as e:
-            logger.error(f'failed to fetch template list:{e}')
-            raise e
-    
-    def template_details(self, eventId) -> TemplateDetails:
-        try:
-            template_data = self.__dal.get_template_details(eventId)
-            template_data.paymentType = TemplateValueMapper.formatted_payment_type(template_data.paymentType)
-            template_data.actionBy = TemplateValueMapper.formatted_action_by(template_data.actionBy)
-            return TemplateDetails(details=template_data)
-        except NotFoundError as e:
-            raise e
-        except Exception as e:
-            logger.error(f'failed to fetch template details:{e}')
-            raise e
 
     def template_mapping(self, msg, raw_data):
         value_mapper = TemplateValueMapper(msg)
@@ -161,17 +56,21 @@ class NotificationBiz:
     def save_log(self, data: dict):
         self.__dal.save_log(data)
 
-    def get_provider_info(self):
-        provider_info = self.__dal.get_provider_info()
+    def get_provider_info(self) -> str:
+        try:
+            provider_info = self.__dal.get_provider_info()
 
-        if not provider_info:
+            if not provider_info:
+                return config.ACTIVE_SMS_PROVIDER.lower()
+            for provider in provider_info:
+                if provider.get('isActive'):
+                    provider_name = provider.get('name', '')
+                    logger.info(f'provider info from mongo:{provider_name}')
+                    return provider_name.lower()
+            
             return config.ACTIVE_SMS_PROVIDER.lower()
-        for provider in provider_info:
-            if provider.get('isActive'):
-                provider_name = provider.get('name', '')
-                return provider_name.lower()
-        
-        return config.ACTIVE_SMS_PROVIDER.lower()
+        except Exception as e:
+            return config.ACTIVE_SMS_PROVIDER.lower()
 
     def call_sms_handler(self, active_provider, message, template_data):
         sms_header = template_data.header
@@ -207,6 +106,7 @@ class NotificationBiz:
                     data['status'] = response['data'][0]['status]']
                 else:
                     data['status'] = response['status']
+                    data['http_status'] = status_code
             else:
                 response, status_code  = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
 
@@ -307,6 +207,7 @@ class NotificationBiz:
             self.save_log(data)
 
     def send_notification(self, message:dict):
+        active_provider = self.get_provider_info()
         try:
             template_data = self.__dal.get_template_details(self.generate_eventid_from_msg(message))
 
@@ -314,7 +215,6 @@ class NotificationBiz:
             is_push = template_data.isPush
             is_email = template_data.isEmail
             is_wa = template_data.isWhatsapp
-            active_provider = self.get_provider_info()
 
             if str(is_sms).upper() == 'Y':
                 self.call_sms_handler(active_provider, message, template_data)
@@ -331,12 +231,21 @@ class NotificationBiz:
                     "mobileNo": message.get("mobileno"),
                     "event": message.get("message_key"),
                     "orderId":message.get("orderid",''),
+                    "service_provider": active_provider,
                     "status": str(e),
+                    "isApplicationErr": True,
                     "createdAt": datetime.utcnow()
                 }
             self.save_log(data)
             raise e
-        
+
+    def update_sms_log(self, reports:list):
+        try:
+            for report in reports:
+                self.__dal.update_sms_log(reports['messageId'], reports['status'], reports['deliveredAt'])
+        except Exception as e:
+            raise e
+
 def is_same_day_multi_shipped(redis_client, message):
 
     updated_str = message.get("updateddate", "")

@@ -61,3 +61,4 @@ STATUS_PRIORITY = {
 }
 
 TERMINATION_STATES = {"order_cancelled", "order_delivered", "customer_denied", "payment_failed"}
+HOME_PAGE_URL= os.getenv("HOME_PAGE_URL")
