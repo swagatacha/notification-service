@@ -36,6 +36,7 @@ class NoSQLDal(TemplateDal):
             return items
         except Exception as e:
             raise e
+    
     def set_provider_active(self, provider_id):
         dbname = self.__datastore.db()
         try:
@@ -184,4 +185,17 @@ class NoSQLDal(TemplateDal):
             return result.modified_count
         except Exception as e:
             raise e
-    
+        
+    def get_short_url(self, actual_url):
+        try:
+            dbname = self.__datastore.sspl_db()
+            result = list(dbname.ShortUrls.find_one(
+                {"ActionUrl": actual_url}
+            ))
+            if isinstance(result, list) and len(result)== 0:
+                msg = "Short Url not found"
+                raise NotFoundError(message=msg)
+            
+            return result[0]['UniqueCode']
+        except Exception as e:
+            raise e

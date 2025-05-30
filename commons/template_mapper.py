@@ -1,6 +1,7 @@
 import base64
 from commons import config, NotificationLogger
 from .enums import PaymentTypeMap, ActionByMap, map_enum_value
+from dal.sql.sql_dal import NoSQLDal
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -12,7 +13,7 @@ class TemplateValueMapper:
 
     def get_values(self) -> dict:
         return {
-            "pname": self.message.get("fname", "Customer"),
+            "fname": self.message.get("fname", "Customer"),
             "orderamount": self.message.get("orderamount", 0),
             "orderid": self.message.get("orderid", ""),
             "products": self.get_products_display(self.message.get("products", [])),
@@ -46,13 +47,19 @@ class TemplateValueMapper:
     
     def generate_track_url(self, orderid):
         if orderid is None:
-            return None
+            return config.HOME_PAGE_URL
         track_orderid = base64.b64encode(str(orderid).encode('utf-8')).strip()
         track_orderid = track_orderid.decode('utf-8')
-        return f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
+        track_url = f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
+        rendomUniqCode = NoSQLDal().get_short_url(track_url)
+        return config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER+"/"+ rendomUniqCode
     
-    def generate_product_url(self):
-        return config.HOME_PAGE_URL
+    def generate_product_url(self, product_url):
+        try:
+            rendomUniqCode = NoSQLDal().get_short_url(product_url)
+            return config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER+"/"+ rendomUniqCode
+        except Exception as e:
+            return config.HOME_PAGE_URL
     
     @staticmethod
     def formatted_event_id(client_request_id:str) -> str:

@@ -44,7 +44,8 @@ mongodb = {
     'password': os.getenv('MONGO_PASWD'),
     'dbname': os.getenv('MONGO_DBNAME'),
     'auth_mechanism': os.getenv('MONGO_AUTH_MECHANISM'),
-    'auth_source': os.getenv('MONGO_USER')
+    'auth_source': os.getenv('MONGO_USER'),
+    'sspl_db': os.getenv('SSPL_DBNAME'),
 }
 # Read Redis Details
 redis = {
@@ -62,3 +63,4 @@ STATUS_PRIORITY = {
 
 TERMINATION_STATES = {"order_cancelled", "order_delivered", "customer_denied", "payment_failed"}
 HOME_PAGE_URL= os.getenv("HOME_PAGE_URL")
+SHORT_URL_PATH= os.getenv("SHORT_URL_PATH")
