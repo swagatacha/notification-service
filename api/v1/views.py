@@ -103,9 +103,16 @@ def notification_delivery_report(payload: dict, response: Response):
                 })
         elif "reference" in payload:
             data = {
-                "messageId": payload["reference"],                
-                "status": payload["status_code"],              
+                "messageId": payload.get("reference"),                
+                "status": payload.get("status_code"),              
                 "deliveredAt": payload.get("delivered")
+            }
+            reports = [data]
+        elif "txid" in payload:
+            data = {
+                "messageId": payload.get("txid"),                
+                "status": payload.get("deliverystatus"),              
+                "deliveredAt": payload.get("deliverydt")
             }
             reports = [data]
         else:
