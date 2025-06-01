@@ -1,6 +1,6 @@
 import traceback
 from dal.template_dal import TemplateDal
-from commons import Mongo, NotificationLogger, TemplateValueMapper
+from commons import Mongo, NotificationLogger
 from biz.errors import NotFoundError
 from dal.errors import IdempotencyError
 from schemas.v1 import DalTemplateRequest, SuccessTemplateAddResponse, SuccessTemplateResponse, DalTemplateModifyRequest, DalProviderDetail
@@ -56,7 +56,7 @@ class NoSQLDal(TemplateDal):
             dbname.template_pool.update_one({"eventId": str(idempotency_key)}, {"$set": request.dict()}, upsert=True)
 
             return SuccessTemplateAddResponse(
-                eventId=TemplateValueMapper.formatted_event_id(idempotency_key),
+                eventId=idempotency_key,
                 event=request.event,
                 smsContent=request.smsContent,
                 pushTitle=request.pushTitle,

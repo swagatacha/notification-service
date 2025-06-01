@@ -28,6 +28,7 @@ class TemplateBiz:
             client_request_id = "_".join(client_request_id_parts)
             try:
                 credit_response = self.__dal.template_add(val, client_request_id)
+                credit_response['eventId'] = TemplateValueMapper.formatted_event_id(client_request_id)
                 success.append(credit_response)
             except IdempotencyError as idempotent_error:
                 idempotent.append(TemplateValueMapper.formatted_event_id(client_request_id))

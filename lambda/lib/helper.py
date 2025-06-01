@@ -31,7 +31,7 @@ def payment_type_validate(data:dict) -> bool:
 
 def event_validate(data: dict) -> bool:
     allowed_event_type = {"order_placed", "order_confirmed", "order_hold",
-                       "order_delivered", "order_cancelled", "order_edit", "order_shipped","product_request"}
+                       "order_delivered", "order_cancelled", "order_edit", "order_shipped","product_request","reorder"}
     event = data.get('event','')
     if event is None:
         return False

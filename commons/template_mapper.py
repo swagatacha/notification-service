@@ -1,7 +1,7 @@
 import base64
 from commons import config, NotificationLogger
 from .enums import PaymentTypeMap, ActionByMap, map_enum_value
-from dal.sql.sql_dal import NoSQLDal
+# from dal.sql.sql_dal import NoSQLDal
 
 log_clt = NotificationLogger()
 logger = log_clt.get_logger(__name__)
@@ -22,7 +22,7 @@ class TemplateValueMapper:
             "codamount": self.message.get("codamount", "0"),
             "reason": self.message.get("reason", ""),
             "trackurl": self.generate_track_url(self.message.get("orderid", "")),
-            "producturl": self.generate_product_url(),
+            "producturl": self.generate_product_url(config.HOME_PAGE_URL),
             "discountpercent": self.message.get("discountpercent", ""),
             "discountamount": self.message.get("discountamount", ""),
             "couponcode": self.message.get("couponcode", ""),
@@ -47,17 +47,14 @@ class TemplateValueMapper:
     
     def generate_track_url(self, orderid):
         if orderid is None:
-            return config.HOME_PAGE_URL
+            return None
         track_orderid = base64.b64encode(str(orderid).encode('utf-8')).strip()
         track_orderid = track_orderid.decode('utf-8')
-        track_url = f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
-        rendomUniqCode = NoSQLDal().get_short_url(track_url)
-        return config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER+"/"+ rendomUniqCode
+        return f"https://sastasundar.com/customers/dashboard/orderview/{track_orderid}"
     
     def generate_product_url(self, product_url):
         try:
-            rendomUniqCode = NoSQLDal().get_short_url(product_url)
-            return config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER+"/"+ rendomUniqCode
+            return product_url
         except Exception as e:
             return config.HOME_PAGE_URL
     

@@ -23,6 +23,13 @@ class NotificationBiz:
     def template_mapping(self, msg, raw_data):
         value_mapper = TemplateValueMapper(msg)
         template_values = value_mapper.get_values()
+        logger.info(f'template_values:{template_values}')
+        if template_values["trackurl"] is not None:
+            rendomUniqCode = self.__dal.get_short_url(template_values["trackurl"])
+            template_values["trackurl"] = config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER + "/"+ rendomUniqCode
+        if template_values["producturl"] is not None:
+            rendomUniqCode = self.__dal.get_short_url(template_values["producturl"])
+            template_values["producturl"] = config.SHORT_URL_PATH + config.SMS_DEFAULT_HEADER + "/"+ rendomUniqCode
         formatted_content = value_mapper.format_template(raw_data, template_values)
         return formatted_content
     
