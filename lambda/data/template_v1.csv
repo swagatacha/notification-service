@@ -59,6 +59,6 @@ product_request,,,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 Great news! Some of your enquired products are now available on SastaSundar. Order now before stock runs out!
 
 {#producturl#}",10001,N,,,,N,,,,N,,,,
-reorder,,,121,,SSTSND,Y,"Hi {#fname#},
+reorder,,,121,1.71E+18,SSTSND,Y,"Hi {#fname#},
  It’s time to refill your medicines at SastaSundar! Reorder now and get FLAT 18% OFF.
  Click here: {#producturl#}",10001,N,,,,N,,,,N,,,,

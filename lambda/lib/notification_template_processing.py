@@ -9,7 +9,7 @@ from urllib3 import Retry
 from enum import Enum
 import traceback
 
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"
 PORT = "8000"
 num = 5
 
