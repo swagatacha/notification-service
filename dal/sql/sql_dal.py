@@ -1,6 +1,6 @@
 import traceback
 from dal.template_dal import TemplateDal
-from commons import Mongo, NotificationLogger, TemplateValueMapper
+from commons import Mongo, NotificationLogger
 from biz.errors import NotFoundError
 from dal.errors import IdempotencyError
 from schemas.v1 import DalTemplateRequest, SuccessTemplateAddResponse, SuccessTemplateResponse, DalTemplateModifyRequest, DalProviderDetail
@@ -36,6 +36,7 @@ class NoSQLDal(TemplateDal):
             return items
         except Exception as e:
             raise e
+    
     def set_provider_active(self, provider_id):
         dbname = self.__datastore.db()
         try:
@@ -55,7 +56,7 @@ class NoSQLDal(TemplateDal):
             dbname.template_pool.update_one({"eventId": str(idempotency_key)}, {"$set": request.dict()}, upsert=True)
 
             return SuccessTemplateAddResponse(
-                eventId=TemplateValueMapper.formatted_event_id(idempotency_key),
+                eventId=idempotency_key,
                 event=request.event,
                 smsContent=request.smsContent,
                 pushTitle=request.pushTitle,
@@ -184,4 +185,17 @@ class NoSQLDal(TemplateDal):
             return result.modified_count
         except Exception as e:
             raise e
-    
+        
+    def get_short_url(self, actual_url):
+        try:
+            dbname = self.__datastore.sspl_db()
+            result = list(dbname.ShortUrls.find_one(
+                {"ActionUrl": actual_url}
+            ))
+            if isinstance(result, list) and len(result)== 0:
+                msg = "Short Url not found"
+                raise NotFoundError(message=msg)
+            
+            return result[0]['UniqueCode']
+        except Exception as e:
+            raise e

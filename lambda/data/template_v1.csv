@@ -1,25 +1,25 @@
 Event,PaymentType,ActionBy,PrincipalTemplateId,TemplateId,Header,IsSMS,SMSContent,CreatedBy,IsPush,PushTitle,PushContent,PushActionLink,IsEmail,EmailSubject,EmailContent,EmailReceipient,IsWhatsapp,WaTemplate,WaBody,WaHeader,WaButtons
-order_placed,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} with amount Rs {#orderamount#} has been placed successfully! Track your order here: {#url#}.
+order_placed,,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} with amount Rs {#orderamount#} has been placed successfully! Track your order here: {#trackurl#}.
 
 Team SastaSundar",10001,N,,,,N,,,,Y,template1,"Dear {#pname#},
 Your order {#orderid#} has been confirmed!  Track your order here: {#url#}.
 
 Team SastaSundar","{""link"":""https://scontent.whatsapp.net/v/t61.29466-34/473403153_463138846869500_4972985275529778349_n.png?ccb=1-7&_nc_sid=8b1bef&_nc_ohc=um9YE_27YsQQ7kNvwGBwy9k&_nc_oc=Adkc8_73ObSryr2as-DCFrbDOTWrnLmFakJMShhrwl1jxt6o-xVP6fM3Bt7cXj7rt4o&_nc_zt=3&_nc_ht=scontent.whatsapp.net&edm=AH51TzQEAAAA&_nc_gid=4KLzDiPlmCq1lDSB1uWX-w&oh=01_Q5Aa1QF-PwdbyS_OHE8PV-IRqFmsUIfVai15vZBiWx1a13XJ6A&oe=68217A69"",""format"":""IMAGE""}","[{""text"":""Order Now"",""url"":""http://sndr.in/sOY7kU"",""type"":""URL""},{""text"":""Reply Stop to Opt-out"",""type"":""QUICK_REPLY""}]"
-order_confirmed,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
-Your order {#orderid#} has been confirmed! Track your order here: {#url#}
+order_confirmed,,,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
+Your order {#orderid#} has been confirmed! Track your order here: {#trackurl#}
 
 Team SastaSundar",10001,N,,,,N,,,,N,,,,
-order_hold,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
-Your order {#orderid#} is currently on hold due to {#reason#}. We will notify you once it is confirmed. Track your order here: {#url#}
+order_hold,,,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
+Your order {#orderid#} is currently on hold due to {#reason#}. We will notify you once it is confirmed. Track your order here: {#trackurl#}
 
 Team SastaSundar",10001,N,,,,N,,,,N,,,,
-order_delivered,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_delivered,,,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 Your order {#orderid#} has been delivered! For any assistance, feel free to call {#customercare#}.
 SastaSundar wishes you health & happiness.",10001,N,,,,N,,,,N,,,,
-order_cancelled,Online,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,Online,C,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 your order {#orderid#} has been cancelled. A refund of Rs {#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
 SastaSundar wishes you health & happiness.",10001,N,,,,N,,,,N,,,,
-order_cancelled,COD,C,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,COD,C,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 your order {#orderid#} has been cancelled.
 
 SastaSundar wishes you health & happiness.",10001,N,,,,N,,,,N,,,,
@@ -34,7 +34,7 @@ Team SastaSundar",10001,N,,,,N,,,,N,,,,
 order_cancelled,Online,Admin,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} has been cancelled due to some unavoidable circumstances. A refund of Rs.{#refundamount#} has been initiated to your source account and it shall get credited to your account within 5 - 7 working days.
 
 Team SastaSundar",10001,N,,,,N,,,,N,,,,
-order_cancelled,COD,Admin,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+order_cancelled,COD,Admin,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 
 Your order {#orderid#} has been cancelled due to some unavoidable circumstances.
 
@@ -44,16 +44,21 @@ order_edit,Online,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSunda
 View updated order: {#url#}",10001,N,,,,N,,,,N,,,,
 order_edit,COD,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. Your billed amount has been adjusted accordingly.
 
-View updated order: {#url#}",10001,N,,,,N,,,,N,,,,
+View updated order: {#trackurl#}",10001,N,,,,N,,,,N,,,,
 order_edit,Wallet,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. A refund of Rs.{#walletrefund#} has been initiated to your wallet.
 
-View updated order: {#url#}",10001,N,,,,N,,,,N,,,,
+View updated order: {#trackurl#}",10001,N,,,,N,,,,N,,,,
 order_edit,Wallet+Online,,121,1.71E+18,SSTSND,Y,"Your order {#orderid#} from SastaSundar has been modified due to unavailablity of {#products#}. A refund of Rs.{#onlinerefund#} has been initiated to your source account and rest to your SS wallet.
 
-View updated order: {#url#}",10001,N,,,,N,,,,N,,,,
+View updated order: {#trackurl#}",10001,N,,,,N,,,,N,,,,
 order_shipped,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
 
 Your orders containing {#products#} items have been shipped. Track your orders in the SastaSundar app.",10001,N,,,,N,,,,N,,,,
-product_request,,,121,1.71E+18,SSTSND,Y,"Dear {#pname#},
+product_request,,,121,1.71E+18,SSTSND,Y,"Dear {#fname#},
 
-Your orders containing {#products#} items have been shipped. Track your orders in the SastaSundar app.",10001,N,,,,N,,,,N,,,,
+Great news! Some of your enquired products are now available on SastaSundar. Order now before stock runs out!
+
+{#producturl#}",10001,N,,,,N,,,,N,,,,
+reorder,,,121,,SSTSND,Y,"Hi {#fname#},
+ It’s time to refill your medicines at SastaSundar! Reorder now and get FLAT 18% OFF.
+ Click here: {#producturl#}",10001,N,,,,N,,,,N,,,,

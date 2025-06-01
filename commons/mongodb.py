@@ -20,6 +20,9 @@ class Mongo:
 
     def db(self):
         return self.__mongo_dbcon[config.mongodb['dbname']]
+    
+    def sspl_db(self):
+        return self.__mongo_dbcon[config.mongodb['sspl_db']]
 
     def close(self):
         if self.__mongo_dbcon:

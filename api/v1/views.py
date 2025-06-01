@@ -121,3 +121,54 @@ def notification_delivery_report(payload: dict, response: Response):
         logger.error(f"server error in add provider {traceback.format_exc()}")
         response.status_code = 500
         raise HTTPException(detail="Unable to process request", status_code=response.status_code)
+    
+@router.post("/notification/process", responses={200:{'model':TemplateBulkResponse}})
+def notification_process(response: Response):
+    try:
+        test_message = {
+                    "emailid": None,
+                    "message_key": "order_placed",
+                    "tags": [
+                        "_parent_aggregated",
+                        "_aggregateexception"
+                    ],
+                    "parentorderid": 101002480419,
+                    "mobileno": 9051574010,
+                    "onlinerefund": 0,
+                    "orderamount": 378,
+                    "updateddate": "2025-03-05T17:49:50.000Z",
+                    "ordertype": "P",
+                    "googleregid": "fQJzrQvkw3EjNmL5IZ-Zj_:APA91bGZvvztgu-bIMlVSeBgb6G2T_3pQ8IdLPODC7cyG9V_y0t5wlYbzE1nLf_zYsUpvlpYgBVzWjMyiW8xS8GznTWAXUSqqIWSH1H0lnsrt43h1JpmiPY",
+                    "seen_orderids": [
+                        101002480419
+                    ],
+                    "orderid": 101002480419,
+                    "parentorder_agg_id": [
+                        "101002480419",
+                        "101002480419"
+                    ],
+                    "fullname": "sumik  ",
+                    "walletrefund": 0,
+                    "paymenttype": 1,
+                    "order_count": 3,
+                    "@timestamp": "2025-05-22T14:19:02.125700455Z",
+                    "orderstatusid": 1,
+                    "orderplacedby": "C",
+                    "fname": "sumik",
+                    "@version": "1",
+                    "products": [
+                        "Pan L Cap (10 Cap)",
+                        "Pan 20 mg Tab (10 Tab)",
+                        "Panbrom Eye Drop 5 ml"
+                    ]
+                }
+        record = process_message(test_message)
+        response.status_code = 200
+        return {
+            "data":"processed",
+            "payload":record
+        }
+    except Exception as e:
+        response.status_code = 500
+        raise HTTPException(detail="Unable to process request", status_code=response.status_code)
+    
