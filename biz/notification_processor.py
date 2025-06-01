@@ -114,6 +114,17 @@ class NotificationBiz:
                 else:
                     data['status'] = response['status']
                     data['http_status'] = status_code
+            elif active_provider == 'smartping':
+                response, status_code  = Sms(sms_header).send_sms_smartping(sms_content, mobileno,
+                                                                template_data.principalTemplateId, template_data.templateId)
+                if status_code == 200:
+                    data['message_id'] = response['transactionId"']
+                    data['http_status'] = status_code
+                    data['groupId'] = response['transactionId']
+                    data['status'] = response['state']
+                else:
+                    data['status'] = response['description']
+                    data['http_status'] = status_code
             else:
                 response, status_code  = Sms(sms_header).send_sms_vfirst(sms_content, mobileno)
 

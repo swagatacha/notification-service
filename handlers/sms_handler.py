@@ -114,5 +114,29 @@ class Sms:
             raise e
         
     @retry(max_retries=3, delay=1, backoff=2)
-    def send_sms_smartping(self, msg, to):
-        pass
+    def send_sms_smartping(self, msg, to, principaltempId="" , tempId=""):
+        try:
+            if to is None:
+                msg = "MobileNo is not valid"
+                return msg
+            if msg is None:
+                msg = "SMS Content is not valid"
+                return msg
+            
+            apiUrl  = f'{config.SMART_PING_API_URL}/fe/api/v1/send'
+            data = {
+                "username": config.SMART_PING_USERNAME,
+                "password": config.SMART_PING_PWD,
+                "unicode": "false", 
+                "from": self.sms_header,
+                "to": to,  
+                "text": msg,
+                "dltContentId": tempId
+            }
+            
+            resp_text, resp = restclient.post(url=apiUrl, data=data, headers={'Content-Type': 'application/jsonp'}, ssl=True)
+
+            return resp_text, resp.status_code
+        except Exception as e:
+            logger.error(f"Exception in send_sms_infobip: {str(e)}")
+            raise e
