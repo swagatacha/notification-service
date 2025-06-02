@@ -2,7 +2,7 @@ import csv
 import json
 import requests
 import datetime
-from lib.helper import string_character_check, event_validate, user_type_validate, payment_type_validate
+from lib.helper import *
 from schemas.template_upload import TemplateAddRequest, TemplateAddApiRequest, ParameterEncoder
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -60,6 +60,29 @@ http.mount("http://", TimeoutHTTPAdapter(max_retries=retries))
 
 
 def is_valid_input(column_value_mapping: dict):
+    required_fields = ['event', 'createdby', 'issms', 'ispush', 'isemail', 'iswhatsapp']
+    for field in required_fields:
+        if not column_value_mapping.get(field):
+            print(f"Missing required field: {field}")
+            return False
+
+    for field in ['issms', 'ispush', 'isemail', 'iswhatsapp']:
+        if column_value_mapping[field] not in ('Y', 'N'):
+            print(f"Invalid value for {field}: must be 'Y' or 'N'")
+            return False
+        
+    if column_value_mapping['issms'] == 'Y' and not sms_required_col_validate(column_value_mapping):
+        return False
+    
+    if column_value_mapping['ispush'] == 'Y' and not push_required_col_validate(column_value_mapping):
+        return False
+    
+    if column_value_mapping['isemail'] == 'Y' and not email_required_col_validate(column_value_mapping):
+        return False
+    
+    if column_value_mapping['iswhatsapp'] == 'Y' and not wa_required_col_validate(column_value_mapping):
+        return False
+        
     if not user_type_validate(column_value_mapping):
         print("user_type_validate fail")
         return False
@@ -77,23 +100,7 @@ def is_valid_input(column_value_mapping: dict):
             '[A-Za-z0-9]+$'):
         print("createdby fail")
         return False
-
-    if column_value_mapping['issms'] not in ('Y', 'N'):
-        print("issms fail")
-        return False
-
-    if column_value_mapping['ispush'] not in ('Y', 'N'):
-        print("ispush fail")
-        return False
-
-    if column_value_mapping['isemail'] not in ('Y', 'N'):
-        print("isemail fail")
-        return False
     
-    if column_value_mapping['iswhatsapp'] not in ('Y', 'N'):
-        print("iswhatsapp fail")
-        return False
-
     return True
 
 
