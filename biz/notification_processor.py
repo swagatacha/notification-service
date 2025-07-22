@@ -110,7 +110,7 @@ class NotificationBiz:
                     data['message_id'] = response['data'][0]['id']
                     data['http_status'] = status_code
                     data['groupId'] = response['data']['group_id']
-                    data['status'] = response['data'][0]['status]']
+                    data['status'] = response['data'][0]['status']
                 else:
                     data['status'] = response['status']
                     data['http_status'] = status_code
@@ -118,7 +118,7 @@ class NotificationBiz:
                 response, status_code  = Sms(sms_header).send_sms_smartping(sms_content, mobileno,
                                                                 template_data.principalTemplateId, template_data.templateId)
                 if status_code == 200:
-                    data['message_id'] = response['transactionId"']
+                    data['message_id'] = response['transactionId']
                     data['http_status'] = status_code
                     data['groupId'] = response['transactionId']
                     data['status'] = response['state']
@@ -260,7 +260,7 @@ class NotificationBiz:
     def update_sms_log(self, reports:list):
         try:
             for report in reports:
-                self.__dal.update_sms_log(reports['messageId'], reports['status'], reports['deliveredAt'])
+                self.__dal.update_sms_log(report['messageId'], report['status'], report['deliveredAt'])
         except Exception as e:
             raise e
 
